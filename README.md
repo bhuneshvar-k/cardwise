@@ -1,5 +1,7 @@
 # Cardwise
 
+[Live app](https://cardwise.prvaha.com) · [Guides](https://cardwise.prvaha.com/blog) · MIT licensed
+
 Tells you which of your credit or debit cards earns the most for a purchase in India: Amazon on
 Amazon Pay ICICI, Swiggy on HSBC Live+, fuel at IndianOil on the IndianOil HDFC card. It knows
 about caps, exclusions, Prime-only rates, card-age limits, UPI rules and fuel surcharge waivers.
@@ -109,3 +111,15 @@ deleted nightly. Set `PRIVACY_CONTACT` to a real grievance contact before launch
 - Admin card editing is a validated JSON editor, not a form.
 - If someone taps a tab within ~0.1 s of typing an amount, nuqs's delayed URL write can cancel the
   navigation (the e2e test waits for the URL to settle).
+
+## Contributing
+
+Issues and pull requests are welcome, especially corrections to card rules. A rule change needs
+the bank page it comes from in `sources`, and a golden test in `curated.test.ts`. Run
+`pnpm lint && pnpm typecheck && pnpm test` before opening a pull request.
+
+## Licence
+
+[MIT](LICENSE). Imported card data comes from CardAdvisor under
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Card and bank names are trademarks of
+their owners; Cardwise is not affiliated with any bank.
