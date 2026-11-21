@@ -14,9 +14,12 @@ export interface SessionUser {
 
 /** The signed-in user for a request, or null. Works in route handlers and server components. */
 export async function getSessionUser(requestHeaders?: Headers): Promise<SessionUser | null> {
+  // Read the request first: a build without DATABASE_URL would otherwise prerender a signed-out
+  // (404) admin page into the static output, and production would serve it to admins.
+  const reqHeaders = requestHeaders ?? (await headers());
   if (!accountsEnabled()) return null;
   const auth = await getAuth();
-  const session = await auth.api.getSession({ headers: requestHeaders ?? (await headers()) });
+  const session = await auth.api.getSession({ headers: reqHeaders });
   if (!session) return null;
   const u = session.user as typeof session.user & { role?: string; consentVersion?: string | null };
   return {
