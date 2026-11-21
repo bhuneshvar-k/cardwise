@@ -2,7 +2,7 @@
 
 import { Download, Trash2, Upload } from 'lucide-react';
 import { useRef } from 'react';
-import { toast } from 'sonner';
+import { toast } from '@/components/ding-toaster';
 import { Button } from '@/components/ui/button';
 import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
 import { Switch } from '@/components/ui/switch';

@@ -3,7 +3,7 @@
 import type { Evaluation, Purchase } from '@cardwise/engine';
 import { useMutation } from '@tanstack/react-query';
 import { AlertTriangle, Check, ChevronDown } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/components/ding-toaster';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

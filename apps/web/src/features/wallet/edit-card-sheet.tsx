@@ -3,7 +3,7 @@
 import type { CardProduct } from '@cardwise/engine';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Controller, useForm } from 'react-hook-form';
-import { toast } from 'sonner';
+import { toast } from '@/components/ding-toaster';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';

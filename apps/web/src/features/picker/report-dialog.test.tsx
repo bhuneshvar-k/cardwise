@@ -6,7 +6,7 @@ import { renderWithProviders } from '@/test/render';
 import { ReportDialog } from './report-dialog';
 
 const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }));
-vi.mock('sonner', () => ({ toast }));
+vi.mock('@/components/ding-toaster', () => ({ toast }));
 
 const live = getCard('hsbc-live-plus')!;
 const purchase: Purchase = {

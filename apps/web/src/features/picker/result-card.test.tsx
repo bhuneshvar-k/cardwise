@@ -6,7 +6,7 @@ import { listSpends, wipeAllData } from '@/lib/repo';
 import { renderWithProviders } from '@/test/render';
 import { ResultCard } from './result-card';
 
-vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.mock('@/components/ding-toaster', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 const live = getCard('hsbc-live-plus')!;
 const userCard = { id: 'u-live', cardId: live.id, statementDay: 10 };

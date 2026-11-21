@@ -13,7 +13,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { toast } from 'sonner';
+import { toast } from '@/components/ding-toaster';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import {

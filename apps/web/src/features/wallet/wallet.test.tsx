@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { addUserCard, wipeAllData } from '@/lib/repo';
 import { Wallet } from './wallet';
 
-vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.mock('@/components/ding-toaster', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 // The edit sheet's Switch measures itself; jsdom has no ResizeObserver.
 vi.stubGlobal(

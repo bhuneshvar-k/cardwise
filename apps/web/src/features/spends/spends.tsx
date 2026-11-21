@@ -2,7 +2,7 @@
 
 import { getMerchant } from '@cardwise/data';
 import { Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/components/ding-toaster';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';

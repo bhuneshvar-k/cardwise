@@ -3,7 +3,7 @@
 import { useCatalogue } from '@/features/catalogue/catalogue-provider';
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
-import { toast } from 'sonner';
+import { toast } from '@/components/ding-toaster';
 import { Button } from '@/components/ui/button';
 import {
   Command,

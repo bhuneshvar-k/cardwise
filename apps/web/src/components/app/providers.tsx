@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import { useState, type ReactNode } from 'react';
-import { Toaster } from '@/components/ui/sonner';
+import { Toaster } from '@/components/ding-toaster';
 import { SyncController } from '@/features/account/sync-controller';
 import { CatalogueProvider } from '@/features/catalogue/catalogue-provider';
 
@@ -24,7 +24,7 @@ export function Providers({ children }: { children: ReactNode }) {
             <NuqsAdapter>{children}</NuqsAdapter>
             <SyncController />
           </CatalogueProvider>
-          <Toaster position="top-center" richColors />
+          <Toaster position="top-center" />
         </QueryClientProvider>
       </ThemeProvider>
     </SerwistProvider>

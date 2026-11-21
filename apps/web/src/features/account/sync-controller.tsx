@@ -3,7 +3,7 @@
 import { PRIVACY_NOTICE_VERSION } from '@cardwise/contracts';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useCallback, useEffect, useRef } from 'react';
-import { toast } from 'sonner';
+import { toast } from '@/components/ding-toaster';
 import { useAccountUser } from '@/lib/auth-client';
 import { db } from '@/lib/db';
 import { syncNow } from '@/lib/sync-client';

@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { addUserCard, saveSettings, wipeAllData } from '@/lib/repo';
 import { Picker } from './picker';
 
-vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.mock('@/components/ding-toaster', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 vi.mock('next/link', () => ({
   default: ({ href, children }: { href: string; children: ReactNode }) => (
     <a href={href}>{children}</a>

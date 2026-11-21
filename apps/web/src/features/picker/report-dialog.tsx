@@ -4,7 +4,7 @@ import type { Evaluation, Purchase } from '@cardwise/engine';
 import { useMutation } from '@tanstack/react-query';
 import { Flag } from 'lucide-react';
 import { useState } from 'react';
-import { toast } from 'sonner';
+import { toast } from '@/components/ding-toaster';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,

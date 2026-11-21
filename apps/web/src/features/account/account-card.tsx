@@ -4,7 +4,7 @@ import { PRIVACY_NOTICE_VERSION } from '@cardwise/contracts';
 import { useMutation } from '@tanstack/react-query';
 import { useLiveQuery } from 'dexie-react-hooks';
 import Link from 'next/link';
-import { toast } from 'sonner';
+import { toast } from '@/components/ding-toaster';
 import { Button } from '@/components/ui/button';
 import { authClient, type AccountUser } from '@/lib/auth-client';
 import { db } from '@/lib/db';

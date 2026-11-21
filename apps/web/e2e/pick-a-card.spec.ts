@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { addCard } from './helpers';
+import { addCard, toast } from './helpers';
 
 test('add cards, get the best card for Swiggy, log the spend', async ({ page }) => {
   // Arrange: a wallet with two cards
@@ -22,7 +22,7 @@ test('add cards, get the best card for Swiggy, log the spend', async ({ page }) 
 
   // Log it and see it under Spends
   await best.getByRole('button', { name: 'Paid with this' }).click();
-  await expect(page.getByText('Logged ₹600 on HSBC Live+ Credit Card')).toBeVisible();
+  await expect(toast(page, 'Logged ₹600 on HSBC Live+ Credit Card')).toBeVisible();
   await page.getByRole('link', { name: 'Spends' }).click();
   await expect(page.getByRole('region', { name: 'Recent spends' })).toContainText('Swiggy');
   await expect(
