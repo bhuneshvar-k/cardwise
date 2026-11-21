@@ -1,11 +1,17 @@
 import { CARDADVISOR_ATTRIBUTION, curatedCards } from '@cardwise/data';
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { PageHeader } from '@/components/app/page-header';
 import { Separator } from '@/components/ui/separator';
 import { AccountPanel } from '@/features/account/account-panel';
 import { DataControls } from '@/features/settings/data-controls';
 
-export const metadata: Metadata = { title: 'About and privacy' };
+export const metadata: Metadata = {
+  title: 'About and privacy',
+  description:
+    'How Cardwise ranks your credit and debit cards, where its card rules come from, and how your data stays on your device.',
+  alternates: { canonical: '/about' },
+};
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -78,6 +84,16 @@ export default function AboutPage() {
           <p>
             Card and bank names are trademarks of their owners. Cardwise is not affiliated with any
             bank.
+          </p>
+        </Section>
+        <Section title="Guides">
+          <p>
+            Plain-English guides to card rewards in India: caps, exclusions, UPI and the best card
+            for common spends.{' '}
+            <Link className="underline" href="/blog">
+              Read the guides
+            </Link>
+            .
           </p>
         </Section>
       </div>
