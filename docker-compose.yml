@@ -22,7 +22,8 @@ services:
   migrate:
     build: { context: ., target: worker }
     environment: *app-env
-    command: ['sh', '-c', 'pnpm --filter @cardwise/db db:migrate && pnpm --filter @cardwise/db db:seed']
+    command:
+      ['sh', '-c', 'pnpm --filter @cardwise/db db:migrate && pnpm --filter @cardwise/db db:seed']
     depends_on:
       postgres: { condition: service_healthy }
     restart: 'no'

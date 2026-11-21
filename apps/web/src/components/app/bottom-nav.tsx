@@ -21,7 +21,8 @@ function Nav({ pathname }: { pathname: string | null }) {
     >
       <ul className="mx-auto grid max-w-lg grid-cols-4">
         {ITEMS.map(({ href, label, icon: Icon }) => {
-          const active = pathname !== null && (href === '/' ? pathname === '/' : pathname.startsWith(href));
+          const active =
+            pathname !== null && (href === '/' ? pathname === '/' : pathname.startsWith(href));
           return (
             <li key={href}>
               <Link

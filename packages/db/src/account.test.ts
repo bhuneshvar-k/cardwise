@@ -1,5 +1,11 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import { deleteUserAccount, exportUserData, recordConsent } from './account';
+import {
+  deleteUserAccount,
+  exportUserData,
+  purgeExpiredAuthRecords,
+  recordConsent,
+} from './account';
+import { session, verification } from './schema';
 import type { Db } from './client';
 import { createReport, listReports, setReportStatus } from './reports';
 import { syncUserData } from './sync';
@@ -81,5 +87,23 @@ describe('account', () => {
     await expect(exportUserData(db, userId)).rejects.toThrow(/not found/i);
     const kept = (await listReports(db, 'open')).find((r) => r.id === report.id);
     expect(kept?.userId).toBeNull();
+  });
+});
+
+describe('purgeExpiredAuthRecords', () => {
+  test('removes expired sessions and tokens, keeps live ones', async () => {
+    const userId = await createTestUser(db);
+    const past = new Date('2026-01-01T00:00:00Z');
+    const future = new Date('2027-01-01T00:00:00Z');
+    await db.insert(session).values([
+      { id: 's-old', token: 't-old', userId, expiresAt: past },
+      { id: 's-live', token: 't-live', userId, expiresAt: future },
+    ]);
+    await db
+      .insert(verification)
+      .values({ id: 'v-old', identifier: 'x', value: 'y', expiresAt: past });
+    const removed = await purgeExpiredAuthRecords(db, new Date('2026-11-21T00:00:00Z'));
+    expect(removed).toBe(2);
+    expect((await db.select().from(session)).map((s) => s.id)).toEqual(['s-live']);
   });
 });

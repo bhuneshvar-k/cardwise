@@ -7,12 +7,13 @@ import { toast } from 'sonner';
 import { useAccountUser } from '@/lib/auth-client';
 import { db } from '@/lib/db';
 import { syncNow } from '@/lib/sync-client';
+import { useServerStatus } from './use-server-status';
 
 const AFTER_EDIT_DELAY_MS = 3000;
 const BACKGROUND_INTERVAL_MS = 5 * 60 * 1000;
 
 /** Keeps a signed-in device in sync: after edits, on focus, when back online and every few minutes. */
-export function SyncController() {
+function ActiveSync() {
   const { user } = useAccountUser();
   const pending = useLiveQuery(() => db.outbox.count(), [], 0);
   const running = useRef(false);
@@ -52,4 +53,10 @@ export function SyncController() {
   }, [pending, canSync, run]);
 
   return null;
+}
+
+/** Servers without accounts never see session requests from the app. */
+export function SyncController() {
+  const status = useServerStatus();
+  return status.data?.accounts ? <ActiveSync /> : null;
 }

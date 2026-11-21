@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { addCard } from './helpers';
 
 const PASSWORD = 'e2e-test-password-123';
 
@@ -18,13 +19,10 @@ test('cards sync to a second device after sign-in', async ({ browser }) => {
   // Device A: sign in and add a card
   const deviceA = await (await browser.newContext()).newPage();
   await signIn(deviceA, email);
-  await deviceA.goto('/cards');
-  await deviceA.getByRole('button', { name: 'Add a card' }).click();
-  await deviceA.getByPlaceholder(/Search by card or bank/).fill('Live+');
-  await deviceA.getByRole('option', { name: 'HSBC Live+ Credit Card' }).click();
-  await deviceA.keyboard.press('Escape');
+  await addCard(deviceA, 'Live+', 'HSBC Live+ Credit Card');
   await deviceA.goto('/about');
-  await expect(deviceA.getByText(/waiting/)).toHaveCount(0, { timeout: 15_000 });
+  await deviceA.getByRole('button', { name: 'Sync now' }).click();
+  await expect(deviceA.getByText('Synced', { exact: true })).toBeVisible({ timeout: 15_000 });
 
   // Device B: a fresh browser signs in and gets the card
   const deviceB = await (await browser.newContext()).newPage();
@@ -48,11 +46,7 @@ test('admin pages are hidden from everyone but admins', async ({ browser }) => {
 
 test('reports from the picker reach the admin queue', async ({ browser }) => {
   const user = await (await browser.newContext()).newPage();
-  await user.goto('/cards');
-  await user.getByRole('button', { name: 'Add a card' }).click();
-  await user.getByPlaceholder(/Search by card or bank/).fill('Live+');
-  await user.getByRole('option', { name: 'HSBC Live+ Credit Card' }).click();
-  await user.keyboard.press('Escape');
+  await addCard(user, 'Live+', 'HSBC Live+ Credit Card');
   await user.goto('/?m=swiggy&a=600');
   await user.getByRole('button', { name: 'Something wrong?' }).first().click();
   const message = `E2E report ${Date.now()}`;

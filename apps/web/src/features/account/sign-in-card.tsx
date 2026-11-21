@@ -61,7 +61,10 @@ function TestSignIn({ disabled, callbackURL }: { disabled: boolean; callbackURL:
       name: email.split('@')[0] ?? email,
       callbackURL,
     });
-    if (signUp.error) toast.error(signUp.error.message ?? 'Sign-in failed');
+    if (!signUp.error) return;
+    // Someone else may have created the account in the meantime: try signing in once more.
+    const retry = await authClient.signIn.email({ email, password, callbackURL });
+    if (retry.error) toast.error(signUp.error.message ?? 'Sign-in failed');
   };
   return (
     <form

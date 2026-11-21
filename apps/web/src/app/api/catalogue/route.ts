@@ -16,8 +16,7 @@ export async function GET(request: Request) {
       ETag: etag,
       'Cache-Control': 'public, no-cache',
     };
-    if (ifNoneMatch === etag)
-      return new NextResponse(null, { status: 304, headers });
+    if (ifNoneMatch === etag) return new NextResponse(null, { status: 304, headers });
     return NextResponse.json(catalogue, { headers });
   } catch (error) {
     console.error('catalogue failed', error);

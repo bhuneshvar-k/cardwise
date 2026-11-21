@@ -9,8 +9,8 @@
   "scripts": {
     "lint": "oxlint --quiet src",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests",
-    "test:cov": "vitest run --coverage --passWithNoTests"
+    "test": "vitest run",
+    "test:cov": "vitest run --coverage"
   },
   "dependencies": {
     "@cardwise/engine": "workspace:*",

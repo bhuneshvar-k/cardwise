@@ -4,6 +4,8 @@ import {
   applyImport,
   decidePendingChange,
   diffCards,
+  getCardForAdmin,
+  listCardsForAdmin,
   getCatalogue,
   listPendingChanges,
   markCardReviewed,
@@ -163,8 +165,10 @@ describe('review decisions', () => {
     await decidePendingChange(db, first!.id, adminId, 'approve');
     await decidePendingChange(db, second!.id, adminId, 'reject');
     const { cards } = await getCatalogue(db);
-    const bps = (id: string) =>
-      (cards.find((c) => c.id === id)?.baseRule.earn as { bps: number }).bps;
+    const bps = (id: string) => {
+      const earn = cards.find((c) => c.id === id)!.baseRule.earn;
+      return earn.type === 'percent' ? earn.bps : NaN;
+    };
     expect(bps(first!.cardId)).toBe(500);
     expect(bps(second!.cardId)).toBe(100);
     expect(await listPendingChanges(db)).toEqual([]);
@@ -185,6 +189,30 @@ describe('review decisions', () => {
     await markCardReviewed(db, 'live', adminId, 'Admin', '2026-11-21');
     const { cards } = await getCatalogue(db);
     expect(cards[0]?.review).toEqual({ reviewedOn: '2026-11-21', reviewedBy: 'Admin' });
+  });
+
+  test('admin lists show every card, and each card history', async () => {
+    await seedCatalogue(db, [curated('live')], [imported('live'), imported('other')]);
+    await saveCardAsAdmin(db, 'ca-other', imported('other', 150), adminId, 'checked');
+    const list = await listCardsForAdmin(db);
+    expect(list.map((c) => c.id).toSorted()).toEqual(['ca-live', 'ca-other', 'live']);
+    expect(list.find((c) => c.id === 'ca-live')?.retired).toBe(true);
+    const detail = await getCardForAdmin(db, 'ca-other');
+    expect(detail?.history.map((h) => [h.revision, h.source])).toEqual([
+      [2, 'admin'],
+      [1, 'seed'],
+    ]);
+    expect(await getCardForAdmin(db, 'nope')).toBeUndefined();
+  });
+
+  test('a decided change cannot be decided again', async () => {
+    await seedCatalogue(db, [], [imported('a', 100)]);
+    await applyImport(db, [imported('a', 500)], 'v2');
+    const [p] = await listPendingChanges(db);
+    await decidePendingChange(db, p!.id, adminId, 'reject');
+    await expect(decidePendingChange(db, p!.id, adminId, 'approve')).rejects.toThrow(
+      /already decided/,
+    );
   });
 
   test('admin saves are validated', async () => {

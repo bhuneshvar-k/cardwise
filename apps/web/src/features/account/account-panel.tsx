@@ -7,7 +7,7 @@ import { useAccountUser } from '@/lib/auth-client';
 import { AccountCard, ConsentCard } from './account-card';
 import { takeConsentIntent } from './consent-intent';
 import { SignInCard } from './sign-in-card';
-import { useServerStatus } from './use-server-status';
+import { useServerStatus, type ServerStatus } from './use-server-status';
 
 async function postConsent(): Promise<boolean> {
   const res = await fetch('/api/account/consent', {
@@ -18,8 +18,7 @@ async function postConsent(): Promise<boolean> {
   return res.ok;
 }
 
-export function AccountPanel() {
-  const status = useServerStatus();
+function AccountSection({ status }: { status: ServerStatus }) {
   const { user, isPending, refetch } = useAccountUser();
   const recorded = useRef(false);
 
@@ -31,9 +30,13 @@ export function AccountPanel() {
     void postConsent().then((ok) => ok && refetch());
   }, [user, refetch]);
 
-  if (!status.data?.accounts) return null;
   if (isPending) return <Skeleton className="h-28 w-full rounded-xl" />;
-  if (!user) return <SignInCard status={status.data} />;
+  if (!user) return <SignInCard status={status} />;
   if (user.consentVersion !== PRIVACY_NOTICE_VERSION) return <ConsentCard onAgreed={refetch} />;
   return <AccountCard user={user} />;
+}
+
+export function AccountPanel() {
+  const status = useServerStatus();
+  return status.data?.accounts ? <AccountSection status={status.data} /> : null;
 }

@@ -1,16 +1,8 @@
-import { expect, test, type Page } from '@playwright/test';
-
-async function addCard(page: Page, search: string, name: string) {
-  await page.getByRole('button', { name: 'Add a card' }).click();
-  await page.getByPlaceholder(/Search by card or bank/).fill(search);
-  await page.getByRole('option', { name }).click();
-  await expect(page.getByText(`Added ${name}`)).toBeVisible();
-  await page.keyboard.press('Escape');
-}
+import { expect, test } from '@playwright/test';
+import { addCard } from './helpers';
 
 test('add cards, get the best card for Swiggy, log the spend', async ({ page }) => {
   // Arrange: a wallet with two cards
-  await page.goto('/cards');
   await addCard(page, 'Live+', 'HSBC Live+ Credit Card');
   await addCard(page, 'Amazon Pay ICICI', 'Amazon Pay ICICI Bank Credit Card');
 
@@ -19,6 +11,8 @@ test('add cards, get the best card for Swiggy, log the spend', async ({ page }) 
   await page.getByLabel('Search merchants').fill('swig');
   await page.getByRole('button', { name: /^Swiggy\s+Food delivery$/ }).click();
   await page.getByLabel('Amount (optional)').fill('600');
+  // nuqs writes the URL a moment later; a navigation before then would be overwritten.
+  await expect(page).toHaveURL(/a=600/);
 
   // Assert: Live+ wins with 10%
   const best = page.getByTestId('result-card').first();
@@ -37,7 +31,6 @@ test('add cards, get the best card for Swiggy, log the spend', async ({ page }) 
 });
 
 test('UPI only ranks RuPay credit cards', async ({ page }) => {
-  await page.goto('/cards');
   await addCard(page, 'Live+', 'HSBC Live+ Credit Card');
   await page.goto('/?c=grocery&p=upi');
   await expect(page.getByTestId('result-card').first()).toContainText(
