@@ -1,11 +1,12 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { JsonLd } from '@/components/app/json-ld';
+import { GitHubButton } from '@/components/app/github-button';
 import { PageHeader } from '@/components/app/page-header';
 import { StorageNotice } from '@/components/app/storage-notice';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Picker } from '@/features/picker/picker';
-import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/lib/seo';
+import { REPO_URL, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/lib/seo';
 
 export const metadata: Metadata = { alternates: { canonical: '/' } };
 
@@ -27,6 +28,8 @@ const STRUCTURED_DATA = {
       applicationCategory: 'FinanceApplication',
       operatingSystem: 'Any (installable web app)',
       isAccessibleForFree: true,
+      license: 'https://opensource.org/licenses/MIT',
+      sameAs: [REPO_URL],
       offers: { '@type': 'Offer', price: '0', priceCurrency: 'INR' },
     },
   ],
@@ -38,6 +41,7 @@ export default function HomePage() {
       <JsonLd data={STRUCTURED_DATA} />
       <PageHeader
         title="Which card?"
+        action={<GitHubButton compact />}
         description="Tell us where you're paying. We'll rank your cards by what they earn."
       />
       <div className="space-y-5">

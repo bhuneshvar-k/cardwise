@@ -6,6 +6,7 @@ export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://cardwise.p
   '',
 );
 export const SITE_NAME = 'Cardwise';
+export const REPO_URL = 'https://github.com/bhuneshvar-k/cardwise';
 export const SITE_DESCRIPTION =
   'Find which credit or debit card earns the most for each purchase in India: Swiggy, Amazon, fuel, UPI and more, with caps and exclusions counted.';
 

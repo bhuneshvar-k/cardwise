@@ -1,6 +1,7 @@
 import { CARDADVISOR_ATTRIBUTION, curatedCards } from '@cardwise/data';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { GitHubButton } from '@/components/app/github-button';
 import { PageHeader } from '@/components/app/page-header';
 import { Separator } from '@/components/ui/separator';
 import { AccountPanel } from '@/features/account/account-panel';
@@ -85,6 +86,13 @@ export default function AboutPage() {
             Card and bank names are trademarks of their owners. Cardwise is not affiliated with any
             bank.
           </p>
+        </Section>
+        <Section title="Open source">
+          <p>
+            Cardwise is free and open source under the MIT licence. Read the code, report a wrong
+            rate, or add a card on GitHub.
+          </p>
+          <GitHubButton />
         </Section>
         <Section title="Guides">
           <p>
