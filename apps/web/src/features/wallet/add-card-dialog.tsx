@@ -26,11 +26,21 @@ import { addUserCard } from '@/lib/repo';
 interface AddCardDialogProps {
   ownedCardIds: readonly string[];
   onAdded: (userCardId: string) => void;
+  /** Control the dialog from outside, e.g. from the empty-wallet ghost card. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function AddCardDialog({ ownedCardIds, onAdded }: AddCardDialogProps) {
+export function AddCardDialog({
+  ownedCardIds,
+  onAdded,
+  open: controlledOpen,
+  onOpenChange,
+}: AddCardDialogProps) {
   const { cards } = useCatalogue();
-  const [open, setOpen] = useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const open = controlledOpen ?? uncontrolledOpen;
+  const setOpen = onOpenChange ?? setUncontrolledOpen;
   const owned = new Set(ownedCardIds);
   const curated = cards.filter((c) => c.origin === 'curated');
   const imported = cards.filter((c) => c.origin !== 'curated');
