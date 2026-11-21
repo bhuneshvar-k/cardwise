@@ -108,9 +108,19 @@ export function MerchantPicker({
           )}
         </ul>
       ) : (
-        <div className="flex flex-wrap gap-2" aria-label="Popular merchants">
+        // One swipeable row, bleeding to the screen edges so the cut-off chip hints at more.
+        <div
+          role="group"
+          aria-label="Popular merchants"
+          className="scrollbar-none -mx-4 flex snap-x gap-2 overflow-x-auto overscroll-x-contain px-4 [scroll-padding-inline:1rem]"
+        >
           {popular.map((m) => (
-            <Badge key={m.id} asChild variant="outline" className="h-8 cursor-pointer px-3 text-sm">
+            <Badge
+              key={m.id}
+              asChild
+              variant="outline"
+              className="h-8 shrink-0 cursor-pointer snap-start px-3 text-sm"
+            >
               <button type="button" onClick={() => onMerchant(m)}>
                 {m.name}
               </button>

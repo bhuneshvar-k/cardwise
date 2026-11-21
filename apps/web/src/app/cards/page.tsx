@@ -2,7 +2,8 @@ import type { Metadata } from 'next';
 import { PageHeader } from '@/components/app/page-header';
 import { Wallet } from '@/features/wallet/wallet';
 
-export const metadata: Metadata = { title: 'My cards' };
+// Shows only this device's cards: nothing for search engines to index.
+export const metadata: Metadata = { title: 'My cards', robots: { index: false, follow: true } };
 
 export default function CardsPage() {
   return (

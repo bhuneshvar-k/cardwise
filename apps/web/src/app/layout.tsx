@@ -2,16 +2,37 @@ import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { BottomNav } from '@/components/app/bottom-nav';
 import { Providers } from '@/components/app/providers';
+import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/lib/seo';
 import './globals.css';
 
 const geistSans = Geist({ variable: '--font-sans', subsets: ['latin'] });
 const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  applicationName: 'Cardwise',
+  metadataBase: new URL(SITE_URL),
+  applicationName: SITE_NAME,
   title: { default: 'Cardwise — which card should I use?', template: '%s · Cardwise' },
-  description: 'Pick the credit or debit card that earns the most for each purchase in India.',
-  appleWebApp: { capable: true, title: 'Cardwise', statusBarStyle: 'default' },
+  description: SITE_DESCRIPTION,
+  keywords: [
+    'best credit card India',
+    'credit card rewards calculator',
+    'which credit card to use',
+    'cashback credit card',
+    'credit card for Swiggy',
+    'credit card for Amazon',
+    'fuel credit card',
+    'RuPay credit card UPI',
+  ],
+  openGraph: {
+    type: 'website',
+    siteName: SITE_NAME,
+    locale: 'en_IN',
+    url: '/',
+    title: 'Cardwise — which card should I use?',
+    description: SITE_DESCRIPTION,
+  },
+  twitter: { card: 'summary_large_image' },
+  appleWebApp: { capable: true, title: SITE_NAME, statusBarStyle: 'default' },
   formatDetection: { telephone: false },
 };
 

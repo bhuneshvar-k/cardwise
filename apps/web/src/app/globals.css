@@ -133,6 +133,14 @@
   }
 }
 
+/* Scrolls by touch, trackpad or wheel but draws no scrollbar. */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /* Drawn wallet card with a holographic foil. `--mx/--my/--rx/--ry` are set by CardFace on
    pointer move; without them the card rests flat with the foil faintly visible. */
 @layer components {
