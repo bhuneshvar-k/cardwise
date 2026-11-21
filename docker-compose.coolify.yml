@@ -1,0 +1,95 @@
+# Coolify stack: same services as docker-compose.yml, minus Caddy (Coolify's proxy terminates
+# HTTPS). Coolify generates SERVICE_PASSWORD_* values on first deploy. Set the web domain in the
+# Coolify UI, then set BETTER_AUTH_URL to the same https:// URL and add the Google client.
+x-app-env: &app-env
+  DATABASE_URL: postgres://cardwise:${SERVICE_PASSWORD_POSTGRES}@postgres:5432/cardwise
+  SENTRY_DSN: ${SENTRY_DSN:-}
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: cardwise
+      POSTGRES_USER: cardwise
+      POSTGRES_PASSWORD: ${SERVICE_PASSWORD_POSTGRES}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U cardwise -d cardwise']
+      interval: 10s
+      retries: 10
+
+  # Runs on every deploy: applies pending migrations, then re-seeds the catalogue (idempotent).
+  migrate:
+    build: { context: ., target: worker }
+    environment: *app-env
+    command:
+      ['sh', '-c', 'pnpm --filter @cardwise/db db:migrate && pnpm --filter @cardwise/db db:seed']
+    depends_on:
+      postgres: { condition: service_healthy }
+    restart: 'no'
+    exclude_from_hc: true
+
+  worker:
+    build: { context: ., target: worker }
+    restart: unless-stopped
+    environment: *app-env
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    exclude_from_hc: true
+
+  web:
+    build:
+      context: .
+      target: web
+      args:
+        GIT_SHA: ${SOURCE_COMMIT:-dev}
+        NEXT_PUBLIC_SENTRY_DSN: ${SENTRY_DSN:-}
+        NEXT_PUBLIC_PRIVACY_CONTACT: ${PRIVACY_CONTACT:-}
+    restart: unless-stopped
+    environment:
+      <<: *app-env
+      SERVICE_FQDN_WEB_3000:
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:?set BETTER_AUTH_URL to the public https URL}
+      BETTER_AUTH_SECRET: ${SERVICE_PASSWORD_64_BETTERAUTH}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}
+    expose: ['3000']
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+
+  # Daily compressed dump, 14 kept, in the backups volume. Copy it off the server.
+  backup:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      PGPASSWORD: ${SERVICE_PASSWORD_POSTGRES}
+    volumes:
+      - backups:/backups
+    # Same loop as deploy/backup.sh, inlined: Coolify does not ship repo files beside the stack.
+    # $$ escapes compose interpolation.
+    entrypoint:
+      - sh
+      - -c
+      - |
+        set -eu
+        umask 077
+        while true; do
+          file="/backups/cardwise-$$(date -u +%Y%m%dT%H%M%SZ).sql.gz"
+          if pg_dump -h postgres -U cardwise -d cardwise | gzip > "$$file.tmp"; then
+            mv "$$file.tmp" "$$file"; echo "backup written: $$file"
+          else
+            rm -f "$$file.tmp"; echo "backup FAILED" >&2
+          fi
+          find /backups -name 'cardwise-*.sql.gz' -mtime +14 -delete
+          sleep 86400
+        done
+    depends_on:
+      postgres: { condition: service_healthy }
+    exclude_from_hc: true
+
+volumes:
+  postgres_data:
+  backups:

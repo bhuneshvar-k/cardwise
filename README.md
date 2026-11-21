@@ -87,6 +87,15 @@ and a daily `pg_dump` into `./backups` (14 kept). Copy `./backups` off the serve
 R2 or S3); the stack does not do that for you. Dumps are written owner-only (`umask 077`) but
 not encrypted on disk: encrypt them before they leave the server (e.g. `age` or rclone crypt).
 
+## Deploying (Coolify)
+
+Create a Docker Compose resource from this repo with compose file `docker-compose.coolify.yml`.
+It is the same stack without Caddy; Coolify's proxy handles HTTPS. Coolify generates the database
+password and `BETTER_AUTH_SECRET`. Give the `web` service a domain, set `BETTER_AUTH_URL` to that
+same `https://` URL, add `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` and `ADMIN_EMAILS`, and add
+`https://<domain>/api/auth/callback/google` to the Google client's redirect URIs. Migrations and
+the catalogue seed run in the `migrate` service on every deploy.
+
 ## Privacy (DPDP Act 2023 and Rules 2025)
 
 `/privacy` is the notice. Users agree before their first sync; the notice version and time are
