@@ -48,7 +48,8 @@ export default function PrivacyPage() {
           </p>
           <p>
             Spends older than {SPEND_RETENTION_MONTHS} months are deleted from our server. Sessions
-            expire after 30 days. Everything else is kept until you delete your account.
+            expire after 30 days. Everything else is kept until you delete your account. Backups of
+            the database are kept for 14 days, so deleted data leaves them within two weeks.
           </p>
         </Section>
         <Section title="Who else handles it">

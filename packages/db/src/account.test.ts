@@ -73,7 +73,7 @@ describe('account', () => {
     expect(data.reports).toHaveLength(1);
   });
 
-  test('deleting an account removes its data and detaches its reports', async () => {
+  test('deleting an account removes its data and its reports', async () => {
     const userId = await createTestUser(db);
     await syncUserData(db, userId, {
       cursor: 0,
@@ -86,7 +86,7 @@ describe('account', () => {
     await deleteUserAccount(db, userId);
     await expect(exportUserData(db, userId)).rejects.toThrow(/not found/i);
     const kept = (await listReports(db, 'open')).find((r) => r.id === report.id);
-    expect(kept?.userId).toBeNull();
+    expect(kept).toBeUndefined();
   });
 });
 

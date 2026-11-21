@@ -13,6 +13,7 @@ import {
   serial,
   text,
   timestamp,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core';
 
 const tz = (name: string) => timestamp(name, { withTimezone: true, mode: 'date' });
@@ -154,7 +155,7 @@ export const cardRevision = pgTable(
     createdBy: text('created_by').references(() => user.id, { onDelete: 'set null' }),
     createdAt: createdAt(),
   },
-  (t) => [index('card_revision_card_idx').on(t.cardId, t.revision)],
+  (t) => [uniqueIndex('card_revision_card_revision_uq').on(t.cardId, t.revision)],
 );
 
 export const importStatus = pgEnum('import_status', ['running', 'succeeded', 'failed']);

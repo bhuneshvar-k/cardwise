@@ -1,6 +1,7 @@
 #!/bin/sh
 # Dump the database once a day and keep the last 14 dumps.
 set -eu
+umask 077 # dumps hold personal data: readable by the owner only
 KEEP_DAYS=14
 while true; do
   file="/backups/cardwise-$(date -u +%Y%m%dT%H%M%SZ).sql.gz"

@@ -84,7 +84,8 @@ as "not reviewed".
 
 That starts Postgres, a one-off migrate and seed, the worker, the web app behind Caddy (HTTPS),
 and a daily `pg_dump` into `./backups` (14 kept). Copy `./backups` off the server (e.g. rclone to
-R2 or S3); the stack does not do that for you.
+R2 or S3); the stack does not do that for you. Dumps are written owner-only (`umask 077`) but
+not encrypted on disk: encrypt them before they leave the server (e.g. `age` or rclone crypt).
 
 ## Privacy (DPDP Act 2023 and Rules 2025)
 

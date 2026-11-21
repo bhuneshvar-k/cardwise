@@ -2,7 +2,7 @@ import { getCatalogue } from '@cardwise/db';
 import { NextResponse } from 'next/server';
 import { getDb } from '@/server/db';
 import { serverEnv } from '@/server/env';
-import { jsonError } from '@/server/http';
+import { jsonError, logServerError } from '@/server/http';
 
 /** The live card catalogue. Clients fall back to the cards bundled with the app on 503. */
 export async function GET(request: Request) {
@@ -19,7 +19,7 @@ export async function GET(request: Request) {
     if (ifNoneMatch === etag) return new NextResponse(null, { status: 304, headers });
     return NextResponse.json(catalogue, { headers });
   } catch (error) {
-    console.error('catalogue failed', error);
+    logServerError('catalogue', error);
     return jsonError(500, 'Could not load the card catalogue');
   }
 }

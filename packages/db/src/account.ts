@@ -48,11 +48,16 @@ export async function exportUserData(db: Db, userId: string) {
 }
 
 /**
- * Erase an account. Sessions, linked accounts and synced data go with the user row
- * (ON DELETE CASCADE); reports stay for card accuracy but lose the link to the user.
+ * Erase an account and everything it wrote: sessions, linked accounts and synced data go with
+ * the user row (ON DELETE CASCADE); the user's reports are deleted here because their free
+ * text can contain personal details.
  */
 export async function deleteUserAccount(db: Db, userId: string): Promise<void> {
-  await db.delete(user).where(eq(user.id, userId));
+  await db.transaction(async (raw) => {
+    const tx = raw as unknown as Db;
+    await tx.delete(report).where(eq(report.userId, userId));
+    await tx.delete(user).where(eq(user.id, userId));
+  });
 }
 
 /** Remove expired sessions and verification tokens. Returns how many rows went. */

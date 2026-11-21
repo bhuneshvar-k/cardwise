@@ -9,7 +9,7 @@ import {
   type SyncRequest,
   type SyncResponse,
 } from '@cardwise/contracts';
-import { and, asc, eq, gt, lt, sql } from 'drizzle-orm';
+import { and, asc, eq, gt, isNull, lt, sql } from 'drizzle-orm';
 import type { Db } from './client';
 import { syncRecord } from './schema';
 
@@ -84,30 +84,13 @@ function emptyChanges(): SyncResponse['changes'] {
   return { userCards: [], spends: [], settings: [] };
 }
 
-/**
- * Apply a device's changes, then return everything that changed after its cursor.
- * Versions come from one Postgres sequence, so the cursor works across devices.
- */
-export async function syncUserData(
-  db: Db,
-  userId: string,
-  request: SyncRequest,
-  { pageSize = DEFAULT_SYNC_PAGE_SIZE }: { pageSize?: number } = {},
-): Promise<SyncResponse> {
-  await db.transaction(async (tx) => {
-    for (const row of toRows(request.changes)) await upsert(tx as unknown as Db, userId, row);
-  });
+/** How long tombstones stay so every device can learn about a deletion. */
+export const TOMBSTONE_DAYS = 90;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
-  const rows = await db
-    .select()
-    .from(syncRecord)
-    .where(and(eq(syncRecord.userId, userId), gt(syncRecord.version, request.cursor)))
-    .orderBy(asc(syncRecord.version))
-    .limit(pageSize + 1);
-
-  const page = rows.slice(0, pageSize);
+function toChanges(rows: (typeof syncRecord.$inferSelect)[]): SyncResponse['changes'] {
   const changes = emptyChanges();
-  for (const row of page) {
+  for (const row of rows) {
     if (row.collection === 'userCards')
       changes.userCards.push(storedUserCardSchema.parse(row.data) as StoredUserCard);
     if (row.collection === 'spends')
@@ -115,18 +98,69 @@ export async function syncUserData(
     if (row.collection === 'settings')
       changes.settings.push(settingsSchema.parse(row.data) as Settings);
   }
+  return changes;
+}
+
+/**
+ * Apply a device's changes, then return everything that changed after its cursor.
+ * One transaction holds a per-user lock across the writes and the read, so a version can
+ * never become visible after a later one was already returned (which would skip it forever).
+ */
+export async function syncUserData(
+  db: Db,
+  userId: string,
+  request: SyncRequest,
+  { pageSize = DEFAULT_SYNC_PAGE_SIZE }: { pageSize?: number } = {},
+): Promise<SyncResponse> {
+  const rows = await db.transaction(async (raw) => {
+    const tx = raw as unknown as Db;
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${userId}))`);
+    for (const row of toRows(request.changes)) await upsert(tx, userId, row);
+    return tx
+      .select()
+      .from(syncRecord)
+      .where(and(eq(syncRecord.userId, userId), gt(syncRecord.version, request.cursor)))
+      .orderBy(asc(syncRecord.version))
+      .limit(pageSize + 1);
+  });
+
+  const page = rows.slice(0, pageSize);
   return {
     cursor: page.at(-1)?.version ?? request.cursor,
-    changes,
+    changes: toChanges(page),
     hasMore: rows.length > pageSize,
   };
 }
 
-/** Retention: delete spends dated before `cutoff` (YYYY-MM-DD). Returns how many went. */
-export async function purgeOldSpends(db: Db, cutoff: string): Promise<number> {
-  const deleted = await db
-    .delete(syncRecord)
-    .where(and(eq(syncRecord.collection, 'spends'), lt(syncRecord.recordDate, cutoff)))
+/**
+ * Retention. Spends dated before `cutoff` (YYYY-MM-DD) become tombstones, so devices delete
+ * them too instead of uploading them again; tombstones older than TOMBSTONE_DAYS are removed.
+ */
+export async function purgeOldSpends(
+  db: Db,
+  cutoff: string,
+  now: Date = new Date(),
+): Promise<{ expired: number; removed: number }> {
+  const stamp = now.toISOString();
+  const expired = await db
+    .update(syncRecord)
+    .set({
+      deletedAt: now,
+      updatedAt: now,
+      data: sql`jsonb_set(jsonb_set(${syncRecord.data}, '{deletedAt}', to_jsonb(${stamp}::text)), '{updatedAt}', to_jsonb(${stamp}::text))`,
+      version: sql`nextval('sync_version_seq')`,
+    })
+    .where(
+      and(
+        eq(syncRecord.collection, 'spends'),
+        lt(syncRecord.recordDate, cutoff),
+        isNull(syncRecord.deletedAt),
+      ),
+    )
     .returning({ id: syncRecord.id });
-  return deleted.length;
+  const removed = await db
+    .delete(syncRecord)
+    .where(lt(syncRecord.deletedAt, new Date(now.getTime() - TOMBSTONE_DAYS * DAY_MS)))
+    .returning({ id: syncRecord.id });
+  return { expired: expired.length, removed: removed.length };
 }

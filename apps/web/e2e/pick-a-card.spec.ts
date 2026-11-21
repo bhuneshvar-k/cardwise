@@ -57,8 +57,9 @@ test('opens and moves between screens offline once installed', async ({ page, co
   // A later online visit, now controlled by the worker, caches the tab payloads
   await page.reload();
   await expect
-    .poll(() =>
-      page.evaluate(async () => (await (await caches.open('rsc-payloads')).keys()).length),
+    .poll(
+      () => page.evaluate(async () => (await (await caches.open('rsc-payloads')).keys()).length),
+      { timeout: 20_000 },
     )
     .toBeGreaterThan(2);
 

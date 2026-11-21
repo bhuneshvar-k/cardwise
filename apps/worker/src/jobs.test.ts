@@ -93,7 +93,7 @@ describe('runRetention', () => {
       },
     });
     const result = await runRetention(db, new Date('2026-11-21T00:00:00Z'));
-    expect(result.spends).toBe(1);
+    expect(result.spends.expired).toBe(1);
   });
 
   test('monthsBefore counts back calendar months', () => {

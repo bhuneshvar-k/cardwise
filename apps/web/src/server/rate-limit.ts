@@ -7,19 +7,30 @@ export interface RateLimiter {
   take: (key: string, now?: number) => boolean;
 }
 
-export function createRateLimiter({
-  limit,
-  windowMs,
-}: {
+interface Options {
   limit: number;
   windowMs: number;
-}): RateLimiter {
+  /** Most keys tracked at once, to bound memory under abuse. */
+  maxKeys?: number;
+}
+
+export function createRateLimiter({ limit, windowMs, maxKeys = 10_000 }: Options): RateLimiter {
   const hits = new Map<string, { count: number; resetAt: number }>();
+
+  /** Drop expired windows; if still full, drop the oldest keys. Never resets live limits wholesale. */
+  const evict = (now: number) => {
+    for (const [key, value] of hits) if (value.resetAt <= now) hits.delete(key);
+    for (const key of hits.keys()) {
+      if (hits.size < maxKeys) break;
+      hits.delete(key);
+    }
+  };
+
   return {
     take(key, now = Date.now()) {
       const entry = hits.get(key);
       if (!entry || entry.resetAt <= now) {
-        if (hits.size > 10_000) hits.clear(); // bound memory under abuse
+        if (!entry && hits.size >= maxKeys) evict(now);
         hits.set(key, { count: 1, resetAt: now + windowMs });
         return true;
       }

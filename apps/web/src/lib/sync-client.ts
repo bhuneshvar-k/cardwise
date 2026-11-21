@@ -31,16 +31,19 @@ function table(collection: SyncCollection): Table<AnyRecord, string> {
 async function loadState(userId: string): Promise<SyncState> {
   const state = await db.syncState.get('sync');
   if (state?.userId === userId) return state;
-  // First sync for this account on this device: everything stored locally joins the account.
   const fresh: SyncState = { id: 'sync', userId, cursor: 0, lastSyncedAt: null };
-  await db.transaction(
-    'rw',
-    [db.userCards, db.spends, db.settings, db.outbox, db.syncState],
-    async () => {
+  const tables = [db.userCards, db.spends, db.settings, db.outbox, db.syncState];
+  await db.transaction('rw', tables, async () => {
+    if (state?.userId) {
+      // Another account's data is still here (its session ended without signing out).
+      // Never upload it into this account: start clean and pull this account's data.
+      await Promise.all(tables.map((t) => t.clear()));
+    } else {
+      // Signed out until now: what was saved on this device joins the account.
       await queueEverything();
-      await db.syncState.put(fresh);
-    },
-  );
+    }
+    await db.syncState.put(fresh);
+  });
   return fresh;
 }
 
@@ -137,11 +140,18 @@ export async function syncNow(userId: string, fetchImpl: Fetch = fetch): Promise
 }
 
 /** Signing out removes account data from this device; it stays in the account. */
+/** Caches that may hold responses fetched while signed in; app code and fonts are kept. */
+const ACCOUNT_CACHE =
+  /^(apis|others|pages|pages-rsc|pages-rsc-prefetch|rsc-payloads|cross-origin)$/;
+
 export async function forgetAccountOnDevice(): Promise<void> {
   const tables = [db.userCards, db.spends, db.settings, db.outbox, db.syncState];
   await db.transaction('rw', tables, async () => {
     await Promise.all(tables.map((t) => t.clear()));
   });
+  if (typeof caches === 'undefined') return;
+  const names = await caches.keys();
+  await Promise.all(names.filter((n) => ACCOUNT_CACHE.test(n)).map((n) => caches.delete(n)));
 }
 
 export async function pendingChangeCount(): Promise<number> {

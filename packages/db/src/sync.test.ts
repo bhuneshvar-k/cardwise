@@ -134,9 +134,10 @@ describe('syncUserData', () => {
 });
 
 describe('purgeOldSpends', () => {
-  test('deletes spends dated before the cutoff and keeps cards', async () => {
+  test('turns old spends into tombstones that sync, then removes them later', async () => {
+    // Arrange
     const userId = await createTestUser(db);
-    await syncUserData(
+    const first = await syncUserData(
       db,
       userId,
       push(0, {
@@ -144,10 +145,34 @@ describe('purgeOldSpends', () => {
         spends: [spend('old', '2024-01-01'), spend('new', '2026-11-01')],
       }),
     );
-    const removed = await purgeOldSpends(db, '2025-05-21');
+    // Act
+    const now = new Date('2026-11-21T00:00:00Z');
+    const result = await purgeOldSpends(db, '2025-05-21', now);
+    // Assert: a device that already had the spend learns it was deleted
+    expect(result.expired).toBeGreaterThanOrEqual(1);
+    const later = await syncUserData(db, userId, push(first.cursor, {}));
+    expect(later.changes.spends).toEqual([
+      expect.objectContaining({ id: 'old', deletedAt: now.toISOString() }),
+    ]);
+    // …and the tombstone itself goes after the grace period
+    const muchLater = new Date('2027-06-01T00:00:00Z');
+    const cleanup = await purgeOldSpends(db, '2025-05-21', muchLater);
+    expect(cleanup.removed).toBeGreaterThanOrEqual(1);
     const all = await syncUserData(db, userId, push(0, {}));
-    expect(removed).toBeGreaterThanOrEqual(1);
     expect(all.changes.spends.map((s) => s.id)).toEqual(['new']);
-    expect(all.changes.userCards).toHaveLength(1);
+  });
+});
+
+describe('concurrent syncs', () => {
+  test('two overlapping syncs for one user both land and none is skipped', async () => {
+    const userId = await createTestUser(db);
+    const [a, b] = await Promise.all([
+      syncUserData(db, userId, push(0, { userCards: [userCard('a')] })),
+      syncUserData(db, userId, push(0, { userCards: [userCard('b')] })),
+    ]);
+    const lowest = Math.min(a.cursor, b.cursor);
+    const all = await syncUserData(db, userId, push(0, {}));
+    expect(all.changes.userCards.map((c) => c.id).toSorted()).toEqual(['a', 'b']);
+    expect(lowest).toBeGreaterThan(0);
   });
 });

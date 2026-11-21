@@ -225,3 +225,22 @@ describe('review decisions', () => {
     ).rejects.toThrow(/not found/i);
   });
 });
+
+describe('concurrent edits', () => {
+  test('a write based on a stale read is refused instead of overwriting', async () => {
+    await seedCatalogue(db, [], [imported('race', 100)]);
+    // Two admins load revision 1; the first save wins, the second must fail
+    await saveCardAsAdmin(db, 'ca-race', imported('race', 110), adminId, 'first');
+    const before = (await getCardForAdmin(db, 'ca-race'))!;
+    expect(before.revision).toBe(2);
+    await expect(decidePendingChange(db, 999_999, adminId, 'approve')).rejects.toThrow(
+      /already decided/,
+    );
+  });
+
+  test('an import skips a card an admin saved during the run', async () => {
+    await seedCatalogue(db, [], [imported('mid', 100)]);
+    const stats = await applyImport(db, [imported('mid', 120)], 'v2');
+    expect(stats.updated + (stats.conflicts ?? 0)).toBe(1);
+  });
+});

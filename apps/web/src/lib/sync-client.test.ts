@@ -93,6 +93,23 @@ describe('syncNow', () => {
     expect(await pendingChangeCount()).toBe(1);
   });
 
+  test('never uploads another account’s leftover data', async () => {
+    // Arrange: Alice synced, then her session ended without signing out
+    const alice = await createTestUser(server);
+    const bob = await createTestUser(server);
+    await addUserCard({ cardId: 'hsbc-live-plus', nickname: 'Alice card' });
+    await syncNow(alice, serverFetch(alice));
+    // Act: Bob signs in on the same device
+    await syncNow(bob, serverFetch(bob));
+    // Assert: Bob's account and device have none of Alice's cards
+    const bobOnServer = await syncUserData(server, bob, {
+      cursor: 0,
+      changes: { userCards: [], spends: [], settings: [] },
+    });
+    expect(bobOnServer.changes.userCards).toEqual([]);
+    expect(await listUserCards()).toEqual([]);
+  });
+
   test('network failures come back as errors', async () => {
     const userId = await createTestUser(server);
     const failing = () => Promise.reject(new Error('offline'));

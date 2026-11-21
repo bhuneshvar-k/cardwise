@@ -3,7 +3,7 @@ import { syncUserData } from '@cardwise/db';
 import { NextResponse } from 'next/server';
 import { getDb } from '@/server/db';
 import { accountsEnabled } from '@/server/env';
-import { isSameOrigin, jsonError, readJson } from '@/server/http';
+import { isSameOrigin, jsonError, readJson, logServerError } from '@/server/http';
 import { createRateLimiter } from '@/server/rate-limit';
 import { getSessionUser } from '@/server/session';
 
@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     const result = await syncUserData(await getDb(), user.id, body.data);
     return NextResponse.json(result, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
-    console.error('sync failed', { userId: user.id, error });
+    logServerError('sync', error);
     return jsonError(500, 'Sync failed. Please try again.');
   }
 }

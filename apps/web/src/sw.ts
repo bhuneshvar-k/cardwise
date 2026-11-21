@@ -3,6 +3,7 @@ import { defaultCache } from '@serwist/next/worker';
 import {
   ExpirationPlugin,
   NetworkFirst,
+  NetworkOnly,
   Serwist,
   type PrecacheEntry,
   type RuntimeCaching,
@@ -41,6 +42,17 @@ const rscCacheKey: SerwistPlugin = {
   },
 };
 
+/**
+ * Never store API responses (account export, sync, session) or admin pages on the device:
+ * they hold one person's data and a shared phone must not serve them to the next user.
+ * The card catalogue is kept in IndexedDB by the app instead.
+ */
+const neverCached: RuntimeCaching = {
+  matcher: ({ url, sameOrigin }) =>
+    sameOrigin && (url.pathname.startsWith('/api/') || url.pathname.startsWith('/admin')),
+  handler: new NetworkOnly(),
+};
+
 const rscPayloads: RuntimeCaching = {
   matcher: ({ request, sameOrigin }) => sameOrigin && request.headers.get('RSC') === '1',
   handler: new NetworkFirst({
@@ -60,7 +72,7 @@ const serwist = new Serwist({
   skipWaiting: true,
   clientsClaim: true,
   navigationPreload: true,
-  runtimeCaching: [rscPayloads, ...defaultCache],
+  runtimeCaching: [neverCached, rscPayloads, ...defaultCache],
   fallbacks: {
     entries: [{ url: '/~offline', matcher: ({ request }) => request.destination === 'document' }],
   },

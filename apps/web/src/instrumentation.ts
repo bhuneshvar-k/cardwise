@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/nextjs';
+import { scrubQueryParams } from './lib/sentry-scrub';
 
 /** Server-side error tracking. Off unless SENTRY_DSN is set. */
 export function register() {
@@ -8,6 +9,7 @@ export function register() {
     dsn,
     environment: process.env.NODE_ENV,
     tracesSampleRate: 0.05,
+    beforeSend: scrubQueryParams,
   });
 }
 

@@ -38,8 +38,8 @@ export function monthsBefore(today: Date, months: number): string {
 export async function runRetention(
   db: Db,
   today: Date = new Date(),
-): Promise<{ spends: number; auth: number }> {
-  const spends = await purgeOldSpends(db, monthsBefore(today, SPEND_RETENTION_MONTHS));
+): Promise<{ spends: { expired: number; removed: number }; auth: number }> {
+  const spends = await purgeOldSpends(db, monthsBefore(today, SPEND_RETENTION_MONTHS), today);
   const auth = await purgeExpiredAuthRecords(db, today);
   return { spends, auth };
 }

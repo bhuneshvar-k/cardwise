@@ -45,6 +45,14 @@ async function insertCard(
   await db.insert(cardRevision).values({ cardId: data.id, revision: 1, data, source });
 }
 
+/** Someone else changed the card between our read and our write. */
+export class ConcurrentEditError extends Error {
+  constructor(cardId: string) {
+    super(`The card ${cardId} has changed since it was loaded. Reload and try again.`);
+    this.name = 'ConcurrentEditError';
+  }
+}
+
 async function writeRevision(
   db: Db,
   row: CardRow,
@@ -53,7 +61,8 @@ async function writeRevision(
   meta: { note?: string; by?: string; adminEdited?: boolean } = {},
 ): Promise<void> {
   const revision = row.revision + 1;
-  await db
+  // Only if nobody else wrote a revision since `row` was read (optimistic locking).
+  const updated = await db
     .update(card)
     .set({
       data,
@@ -61,7 +70,9 @@ async function writeRevision(
       updatedAt: new Date(),
       adminEdited: meta.adminEdited ?? row.adminEdited,
     })
-    .where(eq(card.id, row.id));
+    .where(and(eq(card.id, row.id), eq(card.revision, row.revision)))
+    .returning({ id: card.id });
+  if (updated.length === 0) throw new ConcurrentEditError(row.id);
   await db
     .insert(cardRevision)
     .values({ cardId: row.id, revision, data, source, note: meta.note, createdBy: meta.by });
@@ -80,10 +91,28 @@ export async function seedCatalogue(
     else if (!row.adminEdited && !same(row.data, data))
       await writeRevision(db, row, data, 'seed', { note: 'Code update' });
   }
-  for (const data of imported) {
-    if (!(await findCard(db, data.id)))
-      await insertCard(db, data, 'seed', curatedKeys.has(data.cardAdvisorKey));
-  }
+  // Imported cards are only ever added here (imports update them), so insert the missing
+  // ones in one batch instead of hundreds of round trips.
+  const existing = new Set((await db.select({ id: card.id }).from(card)).map((r) => r.id));
+  const missing = imported.filter((c) => !existing.has(c.id));
+  if (missing.length === 0) return;
+  await db.transaction(async (raw) => {
+    const tx = raw as unknown as Db;
+    await tx.insert(card).values(
+      missing.map((data) => ({
+        id: data.id,
+        origin: data.origin,
+        cardAdvisorKey: data.cardAdvisorKey ?? null,
+        data,
+        retired: curatedKeys.has(data.cardAdvisorKey),
+      })),
+    );
+    await tx
+      .insert(cardRevision)
+      .values(
+        missing.map((data) => ({ cardId: data.id, revision: 1, data, source: 'seed' as const })),
+      );
+  });
 }
 
 export interface Catalogue {
@@ -210,7 +239,13 @@ export async function applyImport(
       curatedRows.filter((r) => r.cardAdvisorKey).map((r) => [r.cardAdvisorKey!, r]),
     );
     for (const data of imported) {
-      stats[await importOne(db, data, curatedByKey, runId)] += 1;
+      try {
+        stats[await importOne(db, data, curatedByKey, runId)] += 1;
+      } catch (error) {
+        // An admin saved this card mid-import; leave it for the next run.
+        if (!(error instanceof ConcurrentEditError)) throw error;
+        stats.conflicts = (stats.conflicts ?? 0) + 1;
+      }
     }
     await db
       .update(importRun)
@@ -241,27 +276,30 @@ export async function decidePendingChange(
   adminId: string,
   decision: 'approve' | 'reject',
 ): Promise<void> {
-  const [pending] = await db.select().from(pendingChange).where(eq(pendingChange.id, id)).limit(1);
-  if (!pending || pending.status !== 'pending') throw new Error('This change was already decided');
-  // Approving a curated-source notice only acknowledges it; the admin edits the curated card.
-  if (decision === 'approve' && pending.reason !== 'curated_source_changed') {
-    const row = await findCard(db, pending.cardId);
+  await db.transaction(async (raw) => {
+    const tx = raw as unknown as Db;
+    // Claim the decision first, so two admins can't both apply the same change.
+    const [pending] = await tx
+      .update(pendingChange)
+      .set({
+        status: decision === 'approve' ? 'approved' : 'rejected',
+        decidedBy: adminId,
+        decidedAt: new Date(),
+      })
+      .where(and(eq(pendingChange.id, id), eq(pendingChange.status, 'pending')))
+      .returning();
+    if (!pending) throw new Error('This change was already decided');
+    // Approving a curated-source notice only acknowledges it; the admin edits the curated card.
+    if (decision !== 'approve' || pending.reason === 'curated_source_changed') return;
+    const row = await findCard(tx, pending.cardId);
     if (!row) throw new Error('Card not found');
     if (row.revision !== pending.baseRevision)
       throw new Error('The card has changed since this proposal');
-    await writeRevision(db, row, pending.proposed, 'admin', {
+    await writeRevision(tx, row, pending.proposed, 'admin', {
       note: `Approved import change #${id}`,
       by: adminId,
     });
-  }
-  await db
-    .update(pendingChange)
-    .set({
-      status: decision === 'approve' ? 'approved' : 'rejected',
-      decidedBy: adminId,
-      decidedAt: new Date(),
-    })
-    .where(eq(pendingChange.id, id));
+  });
 }
 
 export async function saveCardAsAdmin(

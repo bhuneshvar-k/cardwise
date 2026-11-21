@@ -36,7 +36,8 @@ export default defineConfig({
     },
     {
       command: `pnpm start --port ${ACCOUNTS_PORT}`,
-      url: `http://localhost:${ACCOUNTS_PORT}`,
+      // Ready once the embedded database is migrated and seeded, not just when Next listens.
+      url: `http://localhost:${ACCOUNTS_PORT}/api/catalogue`,
       reuseExistingServer: false,
       timeout: 60_000,
       env: {

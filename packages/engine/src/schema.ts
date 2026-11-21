@@ -163,7 +163,8 @@ export type Currency = z.infer<typeof currencySchema>;
 
 export const sourceSchema = z
   .object({
-    url: z.url(),
+    // https only: these links are shown to admins, so no javascript: or data: URLs.
+    url: z.url({ protocol: /^https$/ }),
     checkedOn: z.iso.date(),
     note: z.string().optional(),
   })

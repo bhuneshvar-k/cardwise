@@ -3,6 +3,9 @@ import { addCard } from './helpers';
 
 const PASSWORD = 'e2e-test-password-123';
 
+// Sign-in hashes a password on an embedded database; several of these share one test.
+test.describe.configure({ timeout: 90_000 });
+
 async function signIn(page: Page, email: string) {
   await page.goto('/about');
   await page.getByRole('checkbox', { name: /I agree to the/ }).check();

@@ -3,7 +3,7 @@ import { createReport } from '@cardwise/db';
 import { NextResponse } from 'next/server';
 import { getDb } from '@/server/db';
 import { serverEnv } from '@/server/env';
-import { clientIp, isSameOrigin, jsonError, readJson } from '@/server/http';
+import { clientIp, isSameOrigin, jsonError, readJson, logServerError } from '@/server/http';
 import { createRateLimiter } from '@/server/rate-limit';
 import { getSessionUser } from '@/server/session';
 
@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     const report = await createReport(await getDb(), user?.id ?? null, body.data);
     return NextResponse.json({ id: report.id }, { status: 201 });
   } catch (error) {
-    console.error('report failed', error);
+    logServerError('report', error);
     return jsonError(500, 'Could not send the report');
   }
 }
