@@ -4,33 +4,19 @@
     {
       "name": "web-dev",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": [
-        "--filter",
-        "web",
-        "dev"
-      ],
+      "runtimeArgs": ["--filter", "web", "dev"],
       "port": 3000
     },
     {
       "name": "web-prod",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": [
-        "--filter",
-        "web",
-        "start"
-      ],
+      "runtimeArgs": ["--filter", "web", "start"],
       "port": 3000
     },
     {
       "name": "web-verify",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": [
-        "--filter",
-        "web",
-        "start",
-        "--port",
-        "3300"
-      ],
+      "runtimeArgs": ["--filter", "web", "start", "--port", "3300"],
       "port": 3300
     }
   ]
