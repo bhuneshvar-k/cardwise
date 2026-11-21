@@ -1,0 +1,14 @@
+node_modules
+.next
+.turbo
+dist
+coverage
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+apps/web/public/sw.js
+apps/web/public/sw.js.map
+playwright-report
+test-results
+.DS_Store
