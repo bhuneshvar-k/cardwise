@@ -32,19 +32,29 @@ export function earnUnits(earn: Earn, amountPaise: number): number {
   return Math.floor((amountPaise * earn.units) / earn.perPaise);
 }
 
-function capMaxUnits(cap: Cap, ctx: Ctx): number {
-  if (cap.maxUnits !== undefined) return cap.maxUnits;
+/** The cap's limit on `date`. Card-age caps use the lowest limit when the issue date is unknown. */
+export function resolveCapMax(
+  cap: Cap,
+  issuedOn: string | undefined,
+  date: string,
+): { maxUnits: number; assumed: boolean } {
+  if (cap.maxUnits !== undefined) return { maxUnits: cap.maxUnits, assumed: false };
   const schedule = cap.byCardAge ?? [];
-  if (!ctx.userCard.issuedOn) {
+  if (!issuedOn) return { maxUnits: Math.min(...schedule.map((s) => s.maxUnits)), assumed: true };
+  const age = cardAgeMonths(issuedOn, date);
+  const entry =
+    schedule.find((s) => s.untilMonth === undefined || age < s.untilMonth) ?? schedule.at(-1);
+  return { maxUnits: entry?.maxUnits ?? 0, assumed: false };
+}
+
+function capMaxUnits(cap: Cap, ctx: Ctx): number {
+  const { maxUnits, assumed } = resolveCapMax(cap, ctx.userCard.issuedOn, ctx.purchase.date);
+  if (assumed) {
     ctx.warnings.push(
       `Add the card's issue date: "${cap.label}" depends on card age, so the lowest cap is used.`,
     );
-    return Math.min(...schedule.map((s) => s.maxUnits));
   }
-  const age = cardAgeMonths(ctx.userCard.issuedOn, ctx.purchase.date);
-  const entry =
-    schedule.find((s) => s.untilMonth === undefined || age < s.untilMonth) ?? schedule.at(-1);
-  return entry?.maxUnits ?? 0;
+  return maxUnits;
 }
 
 function capStatuses(rule: EarnRule, ctx: Ctx): CapStatus[] {
@@ -175,6 +185,7 @@ function emptyEvaluation(
     eligible: true,
     rewardUnits: 0,
     unitLabel: card.currency.unitLabel,
+    currencyKind: card.currency.kind,
     rewardValuePaise: 0,
     waiverPaise: 0,
     totalValuePaise: 0,
@@ -247,7 +258,7 @@ export interface RankEntry {
 export function rankCards(entries: readonly RankEntry[], purchase: Purchase): Evaluation[] {
   return entries
     .map((e) => evaluate(e.card, e.userCard, purchase, e.usage))
-    .sort(
+    .toSorted(
       (a, b) =>
         Number(b.eligible) - Number(a.eligible) ||
         b.totalValuePaise - a.totalValuePaise ||

@@ -17,7 +17,7 @@ export function buildCatalogue(
 ): CardProduct[] {
   const replaced = new Set(curated.map((c) => c.cardAdvisorKey).filter(Boolean));
   const rest = importedCards.filter((c) => !replaced.has(c.cardAdvisorKey));
-  return [...curated, ...rest].sort((a, b) => a.name.localeCompare(b.name));
+  return [...curated, ...rest].toSorted((a, b) => a.name.localeCompare(b.name));
 }
 
 export const cards: readonly CardProduct[] = buildCatalogue(

@@ -56,6 +56,8 @@ export interface Evaluation {
   excludedBy?: string;
   rewardUnits: number;
   unitLabel: string;
+  /** Cashback units are paise; points and miles are whole units. */
+  currencyKind: 'cashback' | 'points' | 'miles';
   rewardValuePaise: number;
   waiverPaise: number;
   totalValuePaise: number;

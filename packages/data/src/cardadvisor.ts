@@ -158,7 +158,7 @@ function buildRows(
     });
   });
   // Merchant-scoped rows are more specific; put them first so they win ties.
-  built.rules.sort(
+  built.rules = built.rules.toSorted(
     (a, b) => Number(Boolean(b.match.merchants)) - Number(Boolean(a.match.merchants)),
   );
   return built;

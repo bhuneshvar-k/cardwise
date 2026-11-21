@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { evaluate, rankCards, REFERENCE_AMOUNT_PAISE } from './evaluate';
+import { evaluate, rankCards, REFERENCE_AMOUNT_PAISE, resolveCapMax } from './evaluate';
 import { WAIVER_USAGE_KEY } from './usage';
 import { makeCard, makeUserCard, POINTS_CURRENCY, purchase } from './test-fixtures';
 
@@ -480,5 +480,36 @@ describe('rankCards', () => {
       purchase(),
     );
     expect(ranked.map((r) => r.cardId)).toEqual(['high', 'low']);
+  });
+});
+
+describe('resolveCapMax', () => {
+  const cap = {
+    id: 'c',
+    label: 'c',
+    period: 'calendar_month' as const,
+    byCardAge: [{ untilMonth: 6, maxUnits: 250 }, { maxUnits: 150 }],
+  };
+  test('picks the limit for the card age', () => {
+    expect(resolveCapMax(cap, '2026-10-01', '2026-11-21')).toEqual({
+      maxUnits: 250,
+      assumed: false,
+    });
+    expect(resolveCapMax(cap, '2025-01-01', '2026-11-21')).toEqual({
+      maxUnits: 150,
+      assumed: false,
+    });
+  });
+  test('uses the lowest limit when the issue date is unknown', () => {
+    expect(resolveCapMax(cap, undefined, '2026-11-21')).toEqual({ maxUnits: 150, assumed: true });
+  });
+  test('fixed caps are never assumed', () => {
+    expect(
+      resolveCapMax(
+        { id: 'f', label: 'f', period: 'calendar_month', maxUnits: 9 },
+        undefined,
+        '2026-11-21',
+      ),
+    ).toEqual({ maxUnits: 9, assumed: false });
   });
 });
