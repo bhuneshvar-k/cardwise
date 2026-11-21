@@ -59,6 +59,33 @@ describe('convertCardAdvisor', () => {
     expect(evaluate(c!, uc, { ...p, category: 'fuel' }, {}).excludedBy).toBe('fuel');
   });
 
+  test('a merchant row applies to that merchant even when we file it under another category', () => {
+    const input = file([
+      card({
+        rewards: [
+          row({ category: 'DEFAULT', ratePct: 1 }),
+          row({ category: 'ONLINE_SHOPPING', ratePct: 10, merchants: 'Swiggy' }),
+        ],
+      }),
+    ]);
+    const {
+      cards: [c],
+    } = convertCardAdvisor(input);
+    const r = evaluate(
+      c!,
+      { id: 'u', cardId: c!.id },
+      {
+        category: 'food_delivery',
+        merchantId: 'swiggy',
+        paymentMethod: 'online',
+        amountPaise: 10_000,
+        date: '2026-11-21',
+      },
+      {},
+    );
+    expect(r.effectiveBps).toBe(1000);
+  });
+
   test('turns effective rates on points cards back into points', () => {
     const input = file([
       card({
