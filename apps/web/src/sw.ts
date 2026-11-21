@@ -51,8 +51,12 @@ const rscPayloads: RuntimeCaching = {
   }),
 };
 
+/** Admin pages need the network anyway; don't keep them on every user's device. */
+const isAdmin = (entry: PrecacheEntry | string) =>
+  (typeof entry === 'string' ? entry : entry.url).startsWith('/admin');
+
 const serwist = new Serwist({
-  precacheEntries: self.__SW_MANIFEST,
+  precacheEntries: (self.__SW_MANIFEST ?? []).filter((entry) => !isAdmin(entry)),
   skipWaiting: true,
   clientsClaim: true,
   navigationPreload: true,

@@ -12,3 +12,5 @@ apps/web/public/sw.js.map
 playwright-report
 test-results
 .DS_Store
+backups
+.data

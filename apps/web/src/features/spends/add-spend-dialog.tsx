@@ -1,5 +1,6 @@
 'use client';
 
+import { useCatalogue } from '@/features/catalogue/catalogue-provider';
 import {
   CATEGORIES,
   PAYMENT_METHODS,
@@ -8,7 +9,6 @@ import {
   type Category,
   type PaymentMethod,
 } from '@cardwise/engine';
-import { getCard } from '@cardwise/data';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
@@ -57,6 +57,7 @@ interface AddSpendDialogProps {
 
 /** For spends made without the picker, so caps stay accurate. */
 export function AddSpendDialog({ userCards, spends, today }: AddSpendDialogProps) {
+  const { getCard } = useCatalogue();
   const [open, setOpen] = useState(false);
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),

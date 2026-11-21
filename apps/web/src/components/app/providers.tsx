@@ -6,6 +6,8 @@ import { ThemeProvider } from 'next-themes';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import { useState, type ReactNode } from 'react';
 import { Toaster } from '@/components/ui/sonner';
+import { SyncController } from '@/features/account/sync-controller';
+import { CatalogueProvider } from '@/features/catalogue/catalogue-provider';
 
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -18,7 +20,10 @@ export function Providers({ children }: { children: ReactNode }) {
     <SerwistProvider swUrl="/sw.js" disable={process.env.NODE_ENV !== 'production'}>
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
         <QueryClientProvider client={queryClient}>
-          <NuqsAdapter>{children}</NuqsAdapter>
+          <CatalogueProvider>
+            <NuqsAdapter>{children}</NuqsAdapter>
+            <SyncController />
+          </CatalogueProvider>
           <Toaster position="top-center" richColors />
         </QueryClientProvider>
       </ThemeProvider>

@@ -2,6 +2,7 @@ import { CARDADVISOR_ATTRIBUTION, curatedCards } from '@cardwise/data';
 import type { Metadata } from 'next';
 import { PageHeader } from '@/components/app/page-header';
 import { Separator } from '@/components/ui/separator';
+import { AccountPanel } from '@/features/account/account-panel';
 import { DataControls } from '@/features/settings/data-controls';
 
 export const metadata: Metadata = { title: 'About and privacy' };
@@ -23,10 +24,18 @@ export default function AboutPage() {
         description="How Cardwise works, and what it does with your data."
       />
       <div className="space-y-6">
+        <Section title="Account and sync">
+          <AccountPanel />
+        </Section>
         <Section title="Your data">
           <p>
-            Your cards, settings and spend log are stored in this browser only. Nothing is sent to a
-            server. Cardwise never asks for card numbers, expiry dates or CVVs.
+            Your cards, settings and spend log are stored in this browser, and on our server only if
+            you sign in to sync. Cardwise never asks for card numbers, expiry dates or CVVs. Read
+            the{' '}
+            <a href="/privacy" className="underline">
+              privacy notice
+            </a>
+            .
           </p>
           <DataControls />
         </Section>

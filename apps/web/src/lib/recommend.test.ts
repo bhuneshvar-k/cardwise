@@ -64,6 +64,7 @@ describe('recommend', () => {
         wallet,
         [],
         buildPurchase({ merchantId, paymentMethod, amountPaise: 200_000 }, today)!,
+        getCard,
       )[0]?.cardId;
     expect(best('amazon', 'online')).toBe('icici-amazon-pay');
     expect(best('restaurant', 'in_store')).toBe('hsbc-live-plus');
@@ -92,6 +93,7 @@ describe('recommend', () => {
         { merchantId: 'restaurant', paymentMethod: 'in_store', amountPaise: 200_000 },
         today,
       )!,
+      getCard,
     );
     expect(ranked[0]?.cardId).not.toBe('hsbc-live-plus');
   });
@@ -101,6 +103,7 @@ describe('recommend', () => {
       [userCard('retired-card')],
       [],
       buildPurchase({ category: 'other', paymentMethod: 'online' }, today)!,
+      getCard,
     );
     expect(ranked).toEqual([]);
   });
@@ -124,7 +127,7 @@ describe('toSpendInput', () => {
       { merchantId: 'restaurant', paymentMethod: 'in_store', amountPaise: 200_000 },
       today,
     )!;
-    const [top] = recommend([userCard('hsbc-live-plus')], [], p);
+    const [top] = recommend([userCard('hsbc-live-plus')], [], p, getCard);
     const input = toSpendInput(top!, p);
     expect(input).toMatchObject({
       userCardId: 'u-hsbc-live-plus',

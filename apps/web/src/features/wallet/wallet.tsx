@@ -1,16 +1,17 @@
 'use client';
 
-import { getCard } from '@cardwise/data';
 import { ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useUserCards } from '@/hooks/use-local-data';
 import { useToday } from '@/hooks/use-today';
+import { useCatalogue } from '@/features/catalogue/catalogue-provider';
 import { AddCardDialog } from './add-card-dialog';
 import { CardBadges } from './card-badges';
 import { EditCardSheet } from './edit-card-sheet';
 
 export function Wallet() {
+  const { getCard } = useCatalogue();
   const userCards = useUserCards();
   const [editingId, setEditingId] = useState<string | null>(null);
   const today = useToday();

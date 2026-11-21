@@ -11,6 +11,8 @@ import { formatBps, formatRupees, formatUnits } from '@/lib/money';
 import { toSpendInput } from '@/lib/recommend';
 import { logSpend } from '@/lib/repo';
 import { cn } from '@/lib/utils';
+import { useServerStatus } from '@/features/account/use-server-status';
+import { ReportDialog } from './report-dialog';
 
 interface ResultCardProps {
   evaluation: Evaluation;
@@ -48,6 +50,7 @@ function PaidButton({ evaluation, purchase }: { evaluation: Evaluation; purchase
 }
 
 export function ResultCard({ evaluation: e, purchase, rank, owned }: ResultCardProps) {
+  const status = useServerStatus();
   const best = rank === 0 && e.eligible && e.totalValuePaise > 0;
   return (
     <Card
@@ -116,10 +119,13 @@ export function ResultCard({ evaluation: e, purchase, rank, owned }: ResultCardP
               )}
             </ul>
           </details>
-          {owned && (
-            // A new purchase gets a fresh button, so "Logged" never carries over.
-            <PaidButton key={purchaseKey(purchase)} evaluation={e} purchase={purchase} />
-          )}
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            {owned && (
+              // A new purchase gets a fresh button, so "Logged" never carries over.
+              <PaidButton key={purchaseKey(purchase)} evaluation={e} purchase={purchase} />
+            )}
+            {status.data?.reports && <ReportDialog evaluation={e} purchase={purchase} />}
+          </div>
         </CardContent>
       )}
     </Card>

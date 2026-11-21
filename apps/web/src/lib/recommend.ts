@@ -8,7 +8,7 @@ import {
   type Purchase,
   type RankEntry,
 } from '@cardwise/engine';
-import { getCard, getMerchant } from '@cardwise/data';
+import { getMerchant } from '@cardwise/data';
 import type { StoredSpend, StoredUserCard } from './db';
 import type { SpendInput } from './repo';
 
@@ -46,10 +46,13 @@ export function buildPurchase(choice: PurchaseChoice, today: string): Purchase |
 }
 
 /** Rank the user's own cards, with cap usage worked out from their spend log. */
+export type CardLookup = (id: string) => CardProduct | undefined;
+
 export function recommend(
   userCards: readonly StoredUserCard[],
   spends: readonly StoredSpend[],
   purchase: Purchase,
+  getCard: CardLookup,
 ): Evaluation[] {
   const entries: RankEntry[] = userCards.flatMap((userCard) => {
     const card = getCard(userCard.cardId);

@@ -20,16 +20,16 @@ export function buildCatalogue(
   return [...curated, ...rest].toSorted((a, b) => a.name.localeCompare(b.name));
 }
 
-export const cards: readonly CardProduct[] = buildCatalogue(
-  curatedCards,
-  z.array(cardProductSchema).parse(imported),
-);
+/** Every CardAdvisor card, including ones a curated card replaces (for seeding the database). */
+export const importedCards: readonly CardProduct[] = z.array(cardProductSchema).parse(imported);
+
+export const cards: readonly CardProduct[] = buildCatalogue(curatedCards, importedCards);
 
 const byId = new Map(cards.map((c) => [c.id, c]));
 export const getCard = (id: string): CardProduct | undefined => byId.get(id);
 
 /** A card is "verified" when an admin reviewed it in the last 90 days. */
-export function isVerified(card: CardProduct, today: string): boolean {
+export function isVerified(card: Pick<CardProduct, 'review'>, today: string): boolean {
   if (!card.review) return false;
   const ageMs = Date.parse(today) - Date.parse(card.review.reviewedOn);
   return ageMs <= 90 * 24 * 60 * 60 * 1000;

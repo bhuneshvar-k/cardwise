@@ -1,6 +1,6 @@
 'use client';
 
-import { cards, getMerchant } from '@cardwise/data';
+import { getMerchant } from '@cardwise/data';
 import Link from 'next/link';
 import { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useSettings, useSpends, useUserCards } from '@/hooks/use-local-data';
 import { buildPurchase, recommend, recommendOtherCards } from '@/lib/recommend';
 import { useToday } from '@/hooks/use-today';
+import { useCatalogue } from '@/features/catalogue/catalogue-provider';
 import { MerchantPicker } from './merchant-picker';
 import { PurchaseOptions } from './purchase-options';
 import { ResultCard } from './result-card';
@@ -21,6 +22,7 @@ function Results() {
   const spends = useSpends();
   const settings = useSettings();
   const today = useToday();
+  const catalogue = useCatalogue();
   const purchase = useMemo(() => (today ? buildPurchase(choice, today) : null), [choice, today]);
 
   if (!today) return null;
@@ -40,11 +42,11 @@ function Results() {
     );
   }
 
-  const ranked = recommend(userCards, spends, purchase);
+  const ranked = recommend(userCards, spends, purchase, catalogue.getCard);
   const best = ranked[0]?.totalValuePaise ?? 0;
   const others = settings?.showOtherCards
     ? recommendOtherCards(
-        cards,
+        catalogue.cards,
         userCards.map((c) => c.cardId),
         purchase,
         OTHER_CARDS_LIMIT,

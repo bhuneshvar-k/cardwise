@@ -1,6 +1,6 @@
 'use client';
 
-import { getCard, getMerchant } from '@cardwise/data';
+import { getMerchant } from '@cardwise/data';
 import { Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { CATEGORY_LABELS } from '@/lib/labels';
 import { formatRupees } from '@/lib/money';
 import { deleteSpend } from '@/lib/repo';
 import { useToday } from '@/hooks/use-today';
+import { useCatalogue } from '@/features/catalogue/catalogue-provider';
 import { AddSpendDialog } from './add-spend-dialog';
 import { CapProgress } from './cap-progress';
 
@@ -22,6 +23,7 @@ async function removeSpend(id: string) {
 }
 
 export function Spends() {
+  const { getCard } = useCatalogue();
   const userCards = useUserCards();
   const spends = useSpends();
   const today = useToday();

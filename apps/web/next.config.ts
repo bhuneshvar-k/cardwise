@@ -14,7 +14,9 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: fileURLToPath(new URL('../../', import.meta.url)),
   cacheComponents: true,
   partialPrefetching: true,
-  transpilePackages: ['@cardwise/engine', '@cardwise/data'],
+  transpilePackages: ['@cardwise/engine', '@cardwise/data', '@cardwise/contracts', '@cardwise/db'],
+  // Embedded Postgres ships WASM files that must not be bundled.
+  serverExternalPackages: ['@electric-sql/pglite', 'pg'],
   poweredByHeader: false,
   // experimental.useOffline is off: it holds navigations while offline, which stops the
   // service worker from serving precached pages.

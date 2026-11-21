@@ -1,34 +1,86 @@
-# Production stack for a single VPS: Caddy (HTTPS) in front of the Next.js app.
-# Postgres and the nightly import job join this file when sign-in and sync land.
+# Production stack for one VPS: Caddy (HTTPS) → Next.js, Postgres, a worker for nightly
+# jobs, and daily database backups. Copy .env.example to .env and fill it in first.
+x-app-env: &app-env
+  DATABASE_URL: postgres://cardwise:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/cardwise
+  SENTRY_DSN: ${SENTRY_DSN:-}
+
 services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: cardwise
+      POSTGRES_USER: cardwise
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U cardwise -d cardwise']
+      interval: 10s
+      retries: 10
+
+  migrate:
+    build: { context: ., target: worker }
+    environment: *app-env
+    command: ['sh', '-c', 'pnpm --filter @cardwise/db db:migrate && pnpm --filter @cardwise/db db:seed']
+    depends_on:
+      postgres: { condition: service_healthy }
+    restart: 'no'
+
+  worker:
+    build: { context: ., target: worker }
+    restart: unless-stopped
+    environment: *app-env
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+
   web:
     build:
       context: .
+      target: web
       args:
         GIT_SHA: ${GIT_SHA:-dev}
+        NEXT_PUBLIC_SENTRY_DSN: ${SENTRY_DSN:-}
+        NEXT_PUBLIC_PRIVACY_CONTACT: ${PRIVACY_CONTACT:-}
     restart: unless-stopped
     environment:
-      NODE_ENV: production
-    expose:
-      - '3000'
+      <<: *app-env
+      BETTER_AUTH_URL: https://${DOMAIN:?set DOMAIN}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?set BETTER_AUTH_SECRET}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}
+    expose: ['3000']
+    depends_on:
+      migrate: { condition: service_completed_successfully }
 
   caddy:
     image: caddy:2.10-alpine
     restart: unless-stopped
     depends_on:
-      web:
-        condition: service_healthy
-    ports:
-      - '80:80'
-      - '443:443'
-      - '443:443/udp'
+      web: { condition: service_healthy }
+    ports: ['80:80', '443:443', '443:443/udp']
     environment:
-      DOMAIN: ${DOMAIN:?Set DOMAIN, e.g. cardwise.example.com}
+      DOMAIN: ${DOMAIN:?set DOMAIN}
     volumes:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
 
+  # Daily compressed dump, 14 kept. Copy ./backups off the server (e.g. rclone to R2/S3).
+  backup:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+    volumes:
+      - ./backups:/backups
+      - ./deploy/backup.sh:/backup.sh:ro
+    entrypoint: ['sh', '/backup.sh']
+    depends_on:
+      postgres: { condition: service_healthy }
+
 volumes:
+  postgres_data:
   caddy_data:
   caddy_config:

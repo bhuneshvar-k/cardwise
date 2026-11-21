@@ -9,7 +9,7 @@ export default function CardsPage() {
     <>
       <PageHeader
         title="My cards"
-        description="Saved on this device only. No card numbers, ever."
+        description="Saved on this device, and synced if you sign in. No card numbers, ever."
       />
       <Wallet />
     </>

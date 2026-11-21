@@ -1,6 +1,6 @@
 'use client';
 
-import { cards } from '@cardwise/data';
+import { useCatalogue } from '@/features/catalogue/catalogue-provider';
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -29,6 +29,7 @@ interface AddCardDialogProps {
 }
 
 export function AddCardDialog({ ownedCardIds, onAdded }: AddCardDialogProps) {
+  const { cards } = useCatalogue();
   const [open, setOpen] = useState(false);
   const owned = new Set(ownedCardIds);
   const curated = cards.filter((c) => c.origin === 'curated');
@@ -45,7 +46,7 @@ export function AddCardDialog({ ownedCardIds, onAdded }: AddCardDialogProps) {
     }
   };
 
-  const group = (heading: string, list: typeof cards) => (
+  const group = (heading: string, list: readonly (typeof cards)[number][]) => (
     <CommandGroup heading={heading}>
       {list.map((c) => (
         <CommandItem
