@@ -34,6 +34,14 @@ export default function PrivacyPage() {
             ordinary request details every website sees.
           </p>
         </Section>
+        <Section title="Visit statistics">
+          <p>
+            We count visits with Umami, which runs on our own server. It sets no cookies and stores
+            no IP addresses or anything that identifies you: only the page, the referring site, and
+            the browser, device type and country. It respects your browser&apos;s Do Not Track
+            setting.
+          </p>
+        </Section>
         <Section title="What we collect when you sign in">
           <ul className="list-disc space-y-1 pl-5">
             <li>Your name and email address from Google, to identify your account.</li>

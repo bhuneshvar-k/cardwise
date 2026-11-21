@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { BottomNav } from '@/components/app/bottom-nav';
+import { Analytics } from '@/components/app/analytics';
 import { Providers } from '@/components/app/providers';
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/lib/seo';
 import './globals.css';
@@ -58,6 +59,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
           <main className="mx-auto max-w-lg px-4 pt-6 pb-28">{children}</main>
           <BottomNav />
         </Providers>
+        <Analytics />
       </body>
     </html>
   );
