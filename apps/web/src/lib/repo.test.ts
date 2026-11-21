@@ -51,6 +51,16 @@ describe('user cards', () => {
     expect((await db.userCards.get(card.id))?.deletedAt).toBeTruthy();
   });
 
+  test('re-adding a removed card restores it so its spends still count', async () => {
+    const first = await addUserCard({ cardId: 'hsbc-live-plus', statementDay: 5 });
+    await removeUserCard(first.id);
+    const again = await addUserCard({ cardId: 'hsbc-live-plus' });
+    expect(again.id).toBe(first.id);
+    expect(again.deletedAt).toBeNull();
+    expect(again.statementDay).toBe(5);
+    expect(await listUserCards()).toHaveLength(1);
+  });
+
   test('updating a missing card fails clearly', async () => {
     await expect(updateUserCard('nope', { nickname: 'x' })).rejects.toThrow(/not found/i);
   });

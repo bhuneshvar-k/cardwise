@@ -27,18 +27,19 @@ import { Switch } from '@/components/ui/switch';
 import type { StoredUserCard } from '@/lib/db';
 import { removeUserCard, updateUserCard } from '@/lib/repo';
 
-const optionalNumber = (min: number, max: number, message: string) =>
+const optionalNumber = (min: number, max: number, message: string, integer = false) =>
   z
     .string()
     .trim()
-    .refine(
-      (v) => v === '' || (Number.isFinite(Number(v)) && Number(v) >= min && Number(v) <= max),
-      message,
-    );
+    .refine((v) => {
+      if (v === '') return true;
+      const n = Number(v);
+      return Number.isFinite(n) && n >= min && n <= max && (!integer || Number.isInteger(n));
+    }, message);
 
 const formSchema = z.object({
   nickname: z.string().trim().max(40, 'Keep it under 40 characters'),
-  statementDay: optionalNumber(1, 28, 'Use a day from 1 to 28'),
+  statementDay: optionalNumber(1, 28, 'Use a whole day from 1 to 28', true),
   issuedOn: z.union([z.literal(''), z.iso.date('Use a valid date')]),
   amazonPrime: z.boolean(),
   redemptionId: z.string(),

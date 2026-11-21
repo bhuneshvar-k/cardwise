@@ -30,6 +30,7 @@ async function restoreBackup(file: File | undefined) {
     toast.error('That file is too large to be a Cardwise backup.');
     return;
   }
+  if (!window.confirm('Replace all cards and spends on this device with this backup?')) return;
   try {
     await importData(JSON.parse(await file.text()));
     toast.success('Backup restored');
@@ -80,7 +81,11 @@ export function DataControls() {
           type="file"
           accept="application/json"
           hidden
-          onChange={(e) => restoreBackup(e.target.files?.[0])}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            e.target.value = ''; // let the same file be picked again
+            void restoreBackup(file);
+          }}
         />
         <Button variant="destructive" onClick={wipeEverything}>
           <Trash2 data-icon="inline-start" />

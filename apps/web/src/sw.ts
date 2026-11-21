@@ -23,12 +23,20 @@ const RSC_NETWORK_TIMEOUT_SECONDS = 3;
 
 /**
  * Next adds a changing `_rsc` value to RSC requests, so cached payloads never match offline.
- * Cache them by path alone so tab navigation keeps working without a network.
+ * Key the cache by path plus the kind of payload instead: the route tree prefetch, each
+ * segment prefetch and the full navigation share a path but carry different bodies.
  */
-const stripRscParam: SerwistPlugin = {
+function rscVariant(request: Request): string {
+  const segment = request.headers.get('Next-Router-Segment-Prefetch');
+  if (segment) return `segment:${segment}`;
+  return request.headers.get('Next-Router-Prefetch') === '1' ? 'prefetch' : 'full';
+}
+
+const rscCacheKey: SerwistPlugin = {
   cacheKeyWillBeUsed: async ({ request }) => {
     const url = new URL(request.url);
     url.searchParams.delete('_rsc');
+    url.searchParams.set('__rsc_variant', rscVariant(request));
     return url.href;
   },
 };
@@ -39,7 +47,7 @@ const rscPayloads: RuntimeCaching = {
     cacheName: 'rsc-payloads',
     networkTimeoutSeconds: RSC_NETWORK_TIMEOUT_SECONDS,
     matchOptions: { ignoreVary: true },
-    plugins: [stripRscParam, new ExpirationPlugin({ maxEntries: RSC_CACHE_ENTRIES })],
+    plugins: [rscCacheKey, new ExpirationPlugin({ maxEntries: RSC_CACHE_ENTRIES })],
   }),
 };
 

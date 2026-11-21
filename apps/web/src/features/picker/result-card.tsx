@@ -20,6 +20,10 @@ interface ResultCardProps {
   owned: boolean;
 }
 
+function purchaseKey(p: Purchase): string {
+  return [p.merchantId, p.category, p.paymentMethod, p.amountPaise, p.emi, p.date].join('|');
+}
+
 function PaidButton({ evaluation, purchase }: { evaluation: Evaluation; purchase: Purchase }) {
   const mutation = useMutation({
     mutationFn: () => logSpend(toSpendInput(evaluation, purchase)),
@@ -112,7 +116,10 @@ export function ResultCard({ evaluation: e, purchase, rank, owned }: ResultCardP
               )}
             </ul>
           </details>
-          {owned && <PaidButton evaluation={e} purchase={purchase} />}
+          {owned && (
+            // A new purchase gets a fresh button, so "Logged" never carries over.
+            <PaidButton key={purchaseKey(purchase)} evaluation={e} purchase={purchase} />
+          )}
         </CardContent>
       )}
     </Card>

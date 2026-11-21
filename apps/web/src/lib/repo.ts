@@ -22,7 +22,24 @@ function stamp<T extends object>(input: T) {
   return { ...input, id: newId(), createdAt: time, updatedAt: time, deletedAt: null };
 }
 
+/**
+ * Re-adding a card the user removed brings back the old record, so spends already
+ * logged this cycle still count towards its caps.
+ */
 export async function addUserCard(input: UserCardInput): Promise<StoredUserCard> {
+  const removed = (await db.userCards.where('cardId').equals(input.cardId).toArray()).find(
+    (c) => c.deletedAt,
+  );
+  if (removed) {
+    const restored = storedUserCardSchema.parse({
+      ...removed,
+      ...input,
+      deletedAt: null,
+      updatedAt: now(),
+    });
+    await db.userCards.put(restored);
+    return restored;
+  }
   const card = storedUserCardSchema.parse(stamp(input));
   await db.userCards.add(card);
   return card;

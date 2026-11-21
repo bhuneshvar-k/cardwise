@@ -106,14 +106,40 @@ function applyRule(rule: EarnRule, amount: number, ctx: Ctx): RuleOutcome {
     return { rule, units: allowed, allocations, caps: capped, explanation };
   }
   const overflow = Math.floor((amount * (raw - allowed)) / raw);
-  const base = applyRule(ctx.card.baseRule, overflow, ctx);
+  // The base rule sees what this rule just used, so a shared cap is not counted twice.
+  const base = applyRule(ctx.card.baseRule, overflow, {
+    ...ctx,
+    usage: withAllocations(ctx.usage, allocations),
+  });
   return {
     rule,
     units: allowed + base.units,
-    allocations: [...allocations, ...base.allocations],
-    caps: [...capped, ...base.caps],
+    allocations: mergeAllocations([...allocations, ...base.allocations]),
+    caps: mergeCaps([...capped, ...base.caps]),
     explanation: [...explanation, ...base.explanation.map((e) => `Above cap: ${e}`)],
   };
+}
+
+function withAllocations(usage: CapUsage, allocations: readonly Allocation[]): CapUsage {
+  return allocations.reduce(
+    (acc, a) => ({ ...acc, [a.capId]: (acc[a.capId] ?? 0) + a.units }),
+    usage,
+  );
+}
+
+function mergeAllocations(allocations: readonly Allocation[]): Allocation[] {
+  const totals = withAllocations({}, allocations);
+  return Object.entries(totals).map(([capId, units]) => ({ capId, units }));
+}
+
+/** One status per cap: the first `remainingBefore`, the last `remainingAfter`. */
+function mergeCaps(caps: readonly CapStatus[]): CapStatus[] {
+  const byId = new Map<string, CapStatus>();
+  for (const c of caps) {
+    const first = byId.get(c.capId);
+    byId.set(c.capId, first ? { ...first, remainingAfter: c.remainingAfter } : c);
+  }
+  return [...byId.values()];
 }
 
 function requirementsMet(rule: EarnRule, userCard: UserCard): boolean {
@@ -122,11 +148,19 @@ function requirementsMet(rule: EarnRule, userCard: UserCard): boolean {
   );
 }
 
+/** True when the user hasn't said yes or no to an attribute the rule needs. */
+function attributesUnknown(rule: EarnRule, userCard: UserCard): boolean {
+  return Object.keys(rule.requires ?? {}).some(
+    (attr) => userCard.attributes?.[attr as UserAttribute] === undefined,
+  );
+}
+
 function candidateRules(ctx: Ctx): EarnRule[] {
   const matching = ctx.card.rules.filter((rule) => {
     const m = matchPurchase(rule.match, ctx.purchase);
     if (!m.matches) return false;
     if (!requirementsMet(rule, ctx.userCard)) {
+      if (!attributesUnknown(rule, ctx.userCard)) return false;
       const needs = Object.keys(rule.requires ?? {}).map(
         (a) => ATTRIBUTE_LABELS[a as UserAttribute],
       );
