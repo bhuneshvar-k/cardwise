@@ -3,7 +3,12 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { PageHeader } from '@/components/app/page-header';
 
-export const metadata: Metadata = { title: 'Privacy notice' };
+export const metadata: Metadata = {
+  title: 'Privacy notice',
+  description:
+    'What Cardwise stores, why, and your rights under India’s DPDP Act: no card numbers, local-first data, optional sync.',
+  alternates: { canonical: '/privacy' },
+};
 
 const CONTACT =
   process.env.NEXT_PUBLIC_PRIVACY_CONTACT ?? 'the contact address published on this site';
