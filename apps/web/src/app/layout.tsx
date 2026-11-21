@@ -34,6 +34,8 @@ export const metadata: Metadata = {
   twitter: { card: 'summary_large_image' },
   appleWebApp: { capable: true, title: SITE_NAME, statusBarStyle: 'default' },
   formatDetection: { telephone: false },
+  // Google Search Console ownership for https://cardwise.prvaha.com/ (public by design).
+  verification: { google: 'sohr7d2YgSP5lDDeELwMXB9yJTdW9Q3PnMsa55NJowA' },
 };
 
 export const viewport: Viewport = {
