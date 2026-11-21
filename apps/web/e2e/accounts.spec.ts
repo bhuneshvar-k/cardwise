@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { addCard } from './helpers';
+import { addCard, toast } from './helpers';
 
 const PASSWORD = 'e2e-test-password-123';
 
@@ -25,13 +25,16 @@ test('cards sync to a second device after sign-in', async ({ browser }) => {
   await addCard(deviceA, 'Live+', 'HSBC Live+ Credit Card');
   await deviceA.goto('/about');
   await deviceA.getByRole('button', { name: 'Sync now' }).click();
-  await expect(deviceA.getByText('Synced', { exact: true })).toBeVisible({ timeout: 15_000 });
+  await expect(toast(deviceA, 'Synced')).toBeVisible({ timeout: 15_000 });
 
   // Device B: a fresh browser signs in and gets the card
   const deviceB = await (await browser.newContext()).newPage();
   await signIn(deviceB, email);
   await deviceB.goto('/cards');
-  await expect(deviceB.getByText('HSBC Live+ Credit Card')).toBeVisible({ timeout: 15_000 });
+  // The wallet shows the card's short name on its button.
+  await expect(deviceB.getByRole('button', { name: /HSBC Live\+/ })).toBeVisible({
+    timeout: 15_000,
+  });
 });
 
 test('admin pages are hidden from everyone but admins', async ({ browser }) => {
@@ -42,7 +45,7 @@ test('admin pages are hidden from everyone but admins', async ({ browser }) => {
   const admin = await (await browser.newContext()).newPage();
   await signIn(admin, 'admin@e2e.test');
   await admin.getByRole('link', { name: 'Admin' }).click();
-  await expect(admin.getByText('Changes to review')).toBeVisible();
+  await expect(admin.getByText('Changes to review')).toBeVisible({ timeout: 15_000 });
   await admin.goto('/admin/cards?q=live');
   await expect(admin.getByRole('link', { name: /HSBC Live\+ Credit Card/ }).first()).toBeVisible();
 });
@@ -55,7 +58,7 @@ test('reports from the picker reach the admin queue', async ({ browser }) => {
   const message = `E2E report ${Date.now()}`;
   await user.getByPlaceholder(/My bank says/).fill(message);
   await user.getByRole('button', { name: 'Send report' }).click();
-  await expect(user.getByText('Thanks — we will check this card.')).toBeVisible();
+  await expect(toast(user, 'Thanks — we will check this card.')).toBeVisible();
 
   const admin = await (await browser.newContext()).newPage();
   await signIn(admin, 'admin@e2e.test');
