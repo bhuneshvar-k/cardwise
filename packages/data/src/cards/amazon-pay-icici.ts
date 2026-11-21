@@ -75,6 +75,7 @@ export const amazonPayIcici: CardProduct = cardProductSchema.parse({
   notes: [
     'ICICI FAQ also says 1% at partner merchants; the 2% partner rate needs confirming in the T&C PDF.',
     'Exclusions come from third-party guides; the bank T&C PDF could not be read.',
+    'Amazon gift card purchases are treated like any Amazon order; confirm whether they earn the Amazon rate.',
     'Fuel surcharge waiver amount range is not published on the card page.',
   ],
 });
