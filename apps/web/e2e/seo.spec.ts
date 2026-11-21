@@ -44,3 +44,11 @@ test('device-only screens ask search engines not to index them', async ({ page }
   await page.goto('/cards');
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
 });
+
+test('the home page carries the Google Search Console verification tag', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('meta[name="google-site-verification"]')).toHaveAttribute(
+    'content',
+    /.+/,
+  );
+});
