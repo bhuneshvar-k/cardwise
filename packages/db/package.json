@@ -1,0 +1,38 @@
+{
+  "name": "@cardwise/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema.ts",
+    "./testing": "./src/testing.ts"
+  },
+  "scripts": {
+    "lint": "oxlint --quiet src",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:cov": "vitest run --coverage",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx src/migrate-cli.ts",
+    "db:seed": "tsx src/seed-cli.ts"
+  },
+  "dependencies": {
+    "@cardwise/contracts": "workspace:*",
+    "@cardwise/data": "workspace:*",
+    "@cardwise/engine": "workspace:*",
+    "@electric-sql/pglite": "0.5.17",
+    "drizzle-orm": "0.45.4",
+    "pg": "8.23.1",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@types/pg": "8.23.1",
+    "@vitest/coverage-v8": "catalog:",
+    "drizzle-kit": "0.31.11",
+    "tsx": "4.23.15",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

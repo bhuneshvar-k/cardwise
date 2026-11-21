@@ -1,6 +1,30 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "categories": { "correctness": "error", "suspicious": "warn" },
-  "rules": { "no-console": ["warn", { "allow": ["warn", "error"] }] },
-  "ignorePatterns": ["**/generated/**", ".next/**", "coverage/**"]
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn"
+  },
+  "rules": {
+    "no-console": [
+      "warn",
+      {
+        "allow": ["warn", "error"]
+      }
+    ],
+    "no-underscore-dangle": [
+      "warn",
+      {
+        "allow": ["__SW_MANIFEST"]
+      }
+    ]
+  },
+  "ignorePatterns": ["**/generated/**", ".next/**", "coverage/**"],
+  "overrides": [
+    {
+      "files": ["**/*.test.ts", "**/*.test.tsx", "**/e2e/**"],
+      "rules": {
+        "unicorn/consistent-function-scoping": "off"
+      }
+    }
+  ]
 }

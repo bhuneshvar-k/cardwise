@@ -63,3 +63,14 @@ describe('card schema', () => {
     expect(() => makeCard({ id: 'nosrc', sources: [] })).toThrow();
   });
 });
+
+describe('sources', () => {
+  test('only https links are allowed', () => {
+    expect(() =>
+      makeCard({ id: 'js', sources: [{ url: 'javascript:alert(1)', checkedOn: '2026-11-21' }] }),
+    ).toThrow();
+    expect(() =>
+      makeCard({ id: 'http', sources: [{ url: 'http://bank.example', checkedOn: '2026-11-21' }] }),
+    ).toThrow();
+  });
+});

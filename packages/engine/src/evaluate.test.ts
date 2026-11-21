@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { evaluate, rankCards, REFERENCE_AMOUNT_PAISE } from './evaluate';
+import { evaluate, rankCards, REFERENCE_AMOUNT_PAISE, resolveCapMax } from './evaluate';
 import { WAIVER_USAGE_KEY } from './usage';
 import { makeCard, makeUserCard, POINTS_CURRENCY, purchase } from './test-fixtures';
 
@@ -135,6 +135,17 @@ describe('evaluate: conditions', () => {
       {},
     );
     expect(result.ruleId).toBe('amazon-prime');
+  });
+
+  test('does not nag users who said they have no Prime', () => {
+    const result = evaluate(
+      amazonCard,
+      makeUserCard(amazonCard, { attributes: { amazonPrime: false } }),
+      purchase({ merchantId: 'amazon', category: 'online_shopping' }),
+      {},
+    );
+    expect(result.ruleId).toBe('amazon');
+    expect(result.warnings).toEqual([]);
   });
 
   test('gives non-Prime members the lower rate and warns that Prime matters', () => {
@@ -346,6 +357,43 @@ describe('evaluate: caps', () => {
     expect(unknown.warnings.join(' ')).toMatch(/issue date/i);
   });
 
+  test('base-rate overflow respects a cap it shares with the capped rule', () => {
+    // Arrange: one overall cap of ₹100 on both the 10% rule and the 1% base rule
+    const card = makeCard({
+      id: 'shared-overflow',
+      caps: [{ id: 'all', label: 'All cashback', period: 'calendar_month', maxUnits: 10_000 }],
+      baseRule: {
+        id: 'base',
+        label: '1%',
+        match: {},
+        earn: { type: 'percent', bps: 100 },
+        capIds: ['all'],
+      },
+      rules: [
+        {
+          id: 'dine',
+          label: '10% dining',
+          match: { categories: ['dining'] },
+          earn: { type: 'percent', bps: 1000 },
+          capIds: ['all'],
+          afterCap: 'base',
+        },
+      ],
+    });
+    // Act: ₹2,000 dining with ₹50 already used
+    const result = evaluate(
+      card,
+      makeUserCard(card),
+      purchase({ category: 'dining', amountPaise: 200_000 }),
+      { all: 5000 },
+    );
+    // Assert: only ₹50 left, so overflow earns nothing more and the cap appears once
+    expect(result.rewardUnits).toBe(5000);
+    expect(result.allocations).toEqual([{ capId: 'all', units: 5000 }]);
+    expect(result.caps).toHaveLength(1);
+    expect(result.caps[0]).toMatchObject({ remainingBefore: 5000, remainingAfter: 0 });
+  });
+
   test('per-transaction caps ignore earlier usage', () => {
     const card = makeCard({
       id: 'txn',
@@ -480,5 +528,36 @@ describe('rankCards', () => {
       purchase(),
     );
     expect(ranked.map((r) => r.cardId)).toEqual(['high', 'low']);
+  });
+});
+
+describe('resolveCapMax', () => {
+  const cap = {
+    id: 'c',
+    label: 'c',
+    period: 'calendar_month' as const,
+    byCardAge: [{ untilMonth: 6, maxUnits: 250 }, { maxUnits: 150 }],
+  };
+  test('picks the limit for the card age', () => {
+    expect(resolveCapMax(cap, '2026-10-01', '2026-11-21')).toEqual({
+      maxUnits: 250,
+      assumed: false,
+    });
+    expect(resolveCapMax(cap, '2025-01-01', '2026-11-21')).toEqual({
+      maxUnits: 150,
+      assumed: false,
+    });
+  });
+  test('uses the lowest limit when the issue date is unknown', () => {
+    expect(resolveCapMax(cap, undefined, '2026-11-21')).toEqual({ maxUnits: 150, assumed: true });
+  });
+  test('fixed caps are never assumed', () => {
+    expect(
+      resolveCapMax(
+        { id: 'f', label: 'f', period: 'calendar_month', maxUnits: 9 },
+        undefined,
+        '2026-11-21',
+      ),
+    ).toEqual({ maxUnits: 9, assumed: false });
   });
 });

@@ -242,6 +242,6 @@ export function searchMerchants(query: string, limit = 8): Merchant[] {
       return { m, score };
     })
     .filter((s) => s.score > 0)
-    .sort((a, b) => b.score - a.score || a.m.name.localeCompare(b.m.name));
+    .toSorted((a, b) => b.score - a.score || a.m.name.localeCompare(b.m.name));
   return scored.slice(0, limit).map((s) => s.m);
 }

@@ -5,6 +5,7 @@ import {
   type Category,
   type EarnRule,
   type Exclusion,
+  type Match,
 } from '@cardwise/engine';
 
 /** Credit line required by CardAdvisor's CC BY 4.0 licence. */
@@ -110,6 +111,12 @@ function earnFor(ratePct: number, kind: 'cashback' | 'points', ppu: number): Ear
   };
 }
 
+/** Merchant rows apply to that merchant whatever category we file it under (Swiggy is food delivery, not shopping). */
+function rowMatch(mapped: Category | 'emi', merchants: string[] | undefined): Match {
+  if (mapped === 'emi') return { emi: true };
+  return merchants ? { merchants } : { categories: [mapped] };
+}
+
 interface Built {
   rules: EarnRule[];
   caps: CardProduct['caps'];
@@ -131,10 +138,7 @@ function buildRows(
     if (!mapped) return skip('unknown category');
     const merchants = row.merchants ? merchantIds(row.merchants) : undefined;
     if (row.merchants && !merchants) return skip(`unmapped merchant scope: ${row.merchants}`);
-    const match =
-      mapped === 'emi'
-        ? { emi: true }
-        : { categories: [mapped], ...(merchants ? { merchants } : {}) };
+    const match = rowMatch(mapped, merchants);
     const id = `${row.category.toLowerCase()}-${i}`;
     if (row.ratePct === 0) {
       built.exclusions.push({ id, label: row.category.replaceAll('_', ' ').toLowerCase(), match });
@@ -151,14 +155,14 @@ function buildRows(
     }
     built.rules.push({
       id,
-      label: `${row.ratePct}% on ${'categories' in match ? match.categories[0] : 'EMI'}${merchants ? ` (${merchants.join(', ')})` : ''}`,
+      label: `${row.ratePct}% on ${merchants ? merchants.join(', ') : mapped.replaceAll('_', ' ')}`,
       match,
       earn: earnFor(row.ratePct, kind, ppu),
       ...(capIds ? { capIds } : {}),
     });
   });
   // Merchant-scoped rows are more specific; put them first so they win ties.
-  built.rules.sort(
+  built.rules = built.rules.toSorted(
     (a, b) => Number(Boolean(b.match.merchants)) - Number(Boolean(a.match.merchants)),
   );
   return built;
